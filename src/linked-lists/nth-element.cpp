@@ -387,94 +387,47 @@ public:
     }
 };
 
-void testInsertar()
+Nodo<int *> *findNesimoNodo(Nodo<int *> *cabeza, int n_esimo, int &i)
 {
-    ListaArreglo<int> *lista = new ListaArreglo<int>();
-    lista->agregar(18);
-    lista->agregar(23);
-    lista->agregar(25);
-    lista->moverAPosicion(1);
-    lista->insertar(38);
+    if (cabeza == NULL)
+        return NULL;
 
-    //Reportar
-    /*
-     * Deberia reportar:
-     * 18
-     * 38
-     * 23
-     * 25
-     * */
-    for (lista->moverAInicio();                       //Inicializacion
-         lista->posicionActual() < lista->longitud(); //Condicion de parada
-         lista->siguiente())                          //Incremento
-    {
-        cout << "Elemento: " << lista->getValor() << endl;
-    }
-    delete lista;
+    Nodo<int *> *nodo = findNesimoNodo(cabeza->siguiente, n_esimo, i);
+    i++;
+
+    if (i == n_esimo)
+        return cabeza;
+
+    return nodo;
 }
 
-void testEliminar()
+Nodo<int *> *getNesimoNodo(ListaEnlazada<int> *lista, int n_esimo)
 {
-    ListaArreglo<int> *lista = new ListaArreglo<int>();
-    lista->agregar(18);
-    lista->agregar(23);
-    lista->agregar(25);
-    lista->moverAPosicion(1);
-    lista->insertar(38);
-    int eliminado = lista->eliminar();
-
-    cout << "Eliminado:" << eliminado << " en posicion actual = " << lista->posicionActual() << endl;
-
-    //Reportar
-    /*
-     * Deberia reportar:
-     * 18
-     * 23
-     * 25
-     * */
-    for (lista->moverAInicio();                       //Inicializacion
-         lista->posicionActual() < lista->longitud(); //Condicion de parada
-         lista->siguiente())                          //Incremento
-    {
-        cout << "Elemento: " << lista->getValor() << endl;
-    }
-    delete lista;
-}
-
-void testListaEnlazada()
-{
-    ListaEnlazada<int> *lista = new ListaEnlazada<int>();
-    lista->agregar(10);
-    lista->agregar(18);
-    lista->insertar(15);
-    //Retornar: 0
-    // cout << "Posicion actual:" << lista->posicionActual() << endl;
-    /*Reportar:
-     * Nodo: 15
-     * Nodo: 10
-     * Nodo: 18
-     * */
-    for (lista->moverAInicio(); lista->posicionActual() < lista->longitud(); lista->siguiente())
-    {
-        cout << "Nodo: [" << lista->posicionActual() << "] = " << lista->getValor() << endl;
-    }
-
-    /*Reporte inverso:
-     * Nodo: 18
-     * Nodo: 10
-     * Nodo: 15
-     * */
     int i = 0;
-    for (i = 0, lista->moverAlFinal(), lista->anterior(); i < lista->longitud(); lista->anterior(), i++)
-    {
-        cout << "Nodo: [" << lista->posicionActual() << "] = " << lista->getValor() << endl;
-    }
+    Nodo<int *> *nodo = lista->getCabezaNodo();
+    return findNesimoNodo(nodo, n_esimo, i);
 }
 
 int main()
 {
-    testInsertar();
-    testEliminar();
-    testListaEnlazada();
+    ListaEnlazada<int> *lista = new ListaEnlazada<int>();
+    lista->agregar(8);
+    lista->agregar(6);
+    lista->agregar(3);
+    lista->agregar(4);
+    lista->agregar(7);
+
+    cout << "List: " << endl;
+    lista->reportarConNodos();
+
+    int nth;
+    cout << "Enter the nth-element to find: ";
+    cin >> nth;
+
+    Nodo<int *> *nodo = getNesimoNodo(lista, nth);
+    cout << "value: " << *nodo->elemento << endl;
+
+    delete lista;
+
     return 0;
 }

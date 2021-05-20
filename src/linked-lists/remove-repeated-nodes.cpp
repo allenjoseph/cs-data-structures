@@ -387,94 +387,53 @@ public:
     }
 };
 
-void testInsertar()
+// O(1) in space and O(n^2) in time
+void eliminarDuplicados(ListaEnlazada<int> *lista)
 {
-    ListaArreglo<int> *lista = new ListaArreglo<int>();
-    lista->agregar(18);
-    lista->agregar(23);
-    lista->agregar(25);
-    lista->moverAPosicion(1);
-    lista->insertar(38);
+    Nodo<int *> *actual = lista->getCabezaNodo();
+    Nodo<int *> *temp;
 
-    //Reportar
-    /*
-     * Deberia reportar:
-     * 18
-     * 38
-     * 23
-     * 25
-     * */
-    for (lista->moverAInicio();                       //Inicializacion
-         lista->posicionActual() < lista->longitud(); //Condicion de parada
-         lista->siguiente())                          //Incremento
+    actual = actual->siguiente;
+
+    while (actual != NULL)
     {
-        cout << "Elemento: " << lista->getValor() << endl;
-    }
-    delete lista;
-}
+        int elemento = *actual->elemento;
 
-void testEliminar()
-{
-    ListaArreglo<int> *lista = new ListaArreglo<int>();
-    lista->agregar(18);
-    lista->agregar(23);
-    lista->agregar(25);
-    lista->moverAPosicion(1);
-    lista->insertar(38);
-    int eliminado = lista->eliminar();
+        temp = actual;
+        while (temp->siguiente != NULL)
+        {
+            if (*actual->elemento == *temp->siguiente->elemento)
+            {
+                temp->siguiente = temp->siguiente->siguiente;
+            }
+            else
+            {
+                temp = temp->siguiente;
+            }
+        }
 
-    cout << "Eliminado:" << eliminado << " en posicion actual = " << lista->posicionActual() << endl;
-
-    //Reportar
-    /*
-     * Deberia reportar:
-     * 18
-     * 23
-     * 25
-     * */
-    for (lista->moverAInicio();                       //Inicializacion
-         lista->posicionActual() < lista->longitud(); //Condicion de parada
-         lista->siguiente())                          //Incremento
-    {
-        cout << "Elemento: " << lista->getValor() << endl;
-    }
-    delete lista;
-}
-
-void testListaEnlazada()
-{
-    ListaEnlazada<int> *lista = new ListaEnlazada<int>();
-    lista->agregar(10);
-    lista->agregar(18);
-    lista->insertar(15);
-    //Retornar: 0
-    // cout << "Posicion actual:" << lista->posicionActual() << endl;
-    /*Reportar:
-     * Nodo: 15
-     * Nodo: 10
-     * Nodo: 18
-     * */
-    for (lista->moverAInicio(); lista->posicionActual() < lista->longitud(); lista->siguiente())
-    {
-        cout << "Nodo: [" << lista->posicionActual() << "] = " << lista->getValor() << endl;
-    }
-
-    /*Reporte inverso:
-     * Nodo: 18
-     * Nodo: 10
-     * Nodo: 15
-     * */
-    int i = 0;
-    for (i = 0, lista->moverAlFinal(), lista->anterior(); i < lista->longitud(); lista->anterior(), i++)
-    {
-        cout << "Nodo: [" << lista->posicionActual() << "] = " << lista->getValor() << endl;
+        actual = actual->siguiente;
     }
 }
 
 int main()
 {
-    testInsertar();
-    testEliminar();
-    testListaEnlazada();
+    ListaEnlazada<int> *lista = new ListaEnlazada<int>();
+    lista->agregar(10);
+    lista->agregar(10);
+    lista->agregar(3);
+    lista->agregar(4);
+    lista->agregar(3);
+
+    cout << "List with repeated elements: " << endl;
+    lista->reportarConNodos();
+
+    eliminarDuplicados(lista);
+
+    cout << "List result without repeated elements: " << endl;
+    lista->reportarConNodos();
+
+    delete lista;
+
     return 0;
 }
