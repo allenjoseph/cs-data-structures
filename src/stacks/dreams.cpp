@@ -225,16 +225,16 @@ int main()
 
         command = query.substr(0, 4);
 
-        if (command == "Slee")
+        if (command == "slee" || command == "Slee")
         {
-            dreamer = query.substr(6, 21);
+            dreamer = query.substr(6, 15);
             pila->push(dreamer);
         }
-        else if (command == "Kick")
+        else if (command == "kick" || command == "Kick")
         {
             pila->pop();
         }
-        else if (command == "Test")
+        else if (command == "test" || command == "Test")
         {
             if (pila->longitud() == 0)
             {
@@ -243,10 +243,6 @@ int main()
             else
             {
                 cout << pila->valorTop() << endl;
-            }
-            if (counter < queries)
-            {
-                cout << endl;
             }
         }
         counter++;
