@@ -127,6 +127,75 @@ public:
     }
 };
 
+
+template <typename E> class LCola : public Cola<E> {
+private:
+    Nodo<E>* base;
+    Nodo<E>* cima;
+    int tam;  //Tamanio de la cola
+public:
+
+    /*
+     * Constructor
+     */
+    LCola(){
+        this->base = NULL;
+        this->cima = NULL;
+        this->tam = 0;
+    }
+
+    /*
+     * Destructor
+     */
+    ~LCola(){
+        clear();
+    }
+
+    void clear(){
+        while (this->base!=NULL){
+            Nodo<E> *toDelete = this->base;
+            this->base = this->base->siguiente;
+            delete toDelete;
+        }
+        this->tam=0;
+    }
+
+    void encolar(E val){
+
+        Nodo<E> *aux = new Nodo<E>(val,NULL);
+
+        if(this->tam==0)
+        {
+            this->base = aux;
+        }else
+        {
+            this->cima->siguiente = aux;
+        }
+        this->cima=aux;
+        this->tam++;
+    }
+
+    E desencolar(){
+        E elemento = this->base->elemento;
+        if(this->tam==0){
+            return NULL;
+        }
+        Nodo<E> *toDelete = this->base;
+        this->base=this->base->siguiente;
+        delete toDelete;
+        this->tam--;
+        return elemento;
+    }
+
+    E valorFrontal(){
+        return this->base->elemento;
+    }
+
+    int longitud(){
+        return this->tam;
+    }
+};
+
 int main()
 {
     ACola<int> *cola = new ACola<int>(3);
@@ -144,5 +213,18 @@ int main()
     cout << "desencolar: " << cola->desencolar() << endl;
 
     delete cola;
+
+    LCola<int> *Colatest = new LCola<int>();
+
+    Colatest->encolar(10);
+    Colatest->encolar(20);
+    Colatest->encolar(30);
+    Colatest->encolar(40);
+
+    while(Colatest->longitud()>0){
+        cout<<Colatest->desencolar()<<endl;
+    }
+    delete Colatest;
+
     return 0;
 }
