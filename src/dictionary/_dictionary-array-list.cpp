@@ -115,16 +115,17 @@ public:
         this->arreglo[this->tamLista++] = elemento;
     }
 
-    //Agregar un elemento a la lista (al final)
+    // Agregar un elemento a la lista (al final)
     void agregarOrdenadamente(E elemento)
     {
-        for (int i = 0; this->tamLista; i++)
-            if (this->arreglo[i] >= elemento)
+        for (this->moverAInicio(); this->posicionActual() < this->longitud(); this->siguiente())
+        {
+            if (this->getValor() > elemento)
             {
-                this->moverAPosicion(i);
-                this->insertar(elemento);
                 break;
             }
+        }
+        this->insertar(elemento);
     }
 
     //Retornar le numero de elementos de la lista
@@ -276,22 +277,22 @@ public:
 
     ~DiccionarioArreglo()
     {
-        delete[] this->lista;
+        delete this->lista;
     }
 
     //Reinicializacion de un diccionario
     void limpiar()
     {
-        delete[] this->lista;
-        this->lista = new ListaArreglo<KVPar<Key, E> >();
+        this->limpiar();
     };
 
     //Insertar un registro
     //k: la clave para el reigstro
     //e: el registro
-    void insertar(Key K, E e)
+    void insertar(Key k, E e)
     {
-        this->lista->insertar(*new KVPar<Key, E>(K, e));
+        KVPar<Key, E> temp(k, e);
+        this->lista->agregar(temp);
     };
 
     //Remover y retornar un registro
@@ -299,33 +300,48 @@ public:
     //Retornar: un registro. Si hay mas de un registro con la misma clave,
     //  se debe remover uno de manera arbitraria
     //Retornar NULL si la clave "K" no se encuentra en el diccionario
-    E remover(Key K)
+    E remover(Key k)
     {
-        return "";
+        E temp = this->encontrar(k);
+        if (temp != NULL)
+        {
+            this->lista->eliminar();
+        }
+        return temp;
     };
 
     //Remover y retornar un registro arbitrario del diccionario
     //Retornar: el registro que ha sido removido o NULL si no existe
     E removerCualquiera()
     {
-        KVPar<int, string> *elem = new KVPar<int, string>();
-        *elem = this->lista->eliminar();
+        this->lista->moverAlFinal();
+        this->lista->anterior();
+        KVPar<Key, E> elem = this->lista->eliminar();
         return elem->valor();
     };
 
     //Return: un registro o NULL si no existe
     //Si hay multiples registros, se debe retornar uno de manera aleatoria
     //K: la clave del registro a encontrar
-    E encontrar(Key K)
+    E encontrar(Key k)
     {
-        return "";
+        for(
+            this->lista->moverAInicio();
+            this->lista->posicionActual() < this->lista->longitud();
+            this->lista->siguiente()
+        )
+        {
+            KVPar<Key, E> temp = this->lista->getValor();
+            if (k == temp.key())
+                return temp.valor();
+        }
+        return NULL;
     };
 
     //Retornar el número de registros dentro del diccionario
     int longitud()
     {
-        int length = this->lista->longitud();
-        return length;
+        return this->lista->longitud();
     };
 };
 
