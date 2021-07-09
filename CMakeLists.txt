@@ -3,4 +3,5 @@ project(cs_data_structures)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(hash src/hash/_hash.cpp)
+add_executable(hash src/hash/espacios-metricos.cpp)
+
