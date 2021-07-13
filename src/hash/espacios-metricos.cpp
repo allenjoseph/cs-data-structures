@@ -4,8 +4,9 @@
 using namespace std;
 
 //Clase Padre: Lista
-template<typename E>
-class Lista {
+template <typename E>
+class Lista
+{
 private:
 public:
     //Constructor
@@ -57,8 +58,9 @@ public:
 };
 
 //Clase Hija: ListaArreglo
-template<typename E>
-class ListaArreglo : public Lista<E> {
+template <typename E>
+class ListaArreglo : public Lista<E>
+{
 private:
     E *arreglo;   //Arreglo de elementos
     int tamMax;   //Tamanho fijo
@@ -67,54 +69,65 @@ private:
 
 public:
     //Constructor
-    ListaArreglo(int tamMax = 10) {
+    ListaArreglo(int tamMax = 10)
+    {
         this->tamMax = tamMax;
         this->tamLista = this->actual = 0;
         this->arreglo = new E[this->tamMax];
-        for (int i = 0; i < this->tamMax; ++i) {
+        for (int i = 0; i < this->tamMax; ++i)
+        {
             this->arreglo[i] = nullptr;
         }
     }
 
     //Destructor
-    ~ListaArreglo() {
+    ~ListaArreglo()
+    {
         delete[] this->arreglo;
     }
 
     //Mover "actual" al inicio de la lista
-    void moverAInicio() {
+    void moverAInicio()
+    {
         this->actual = 0;
     }
 
     //Mover "actual" al final de la lista:
     // primer espacio disponible
-    void moverAlFinal() {
+    void moverAlFinal()
+    {
         this->actual = this->tamLista;
     }
 
     //Mover "actual" a la posicion posterior (derecha)
-    void siguiente() {
+    void siguiente()
+    {
         //Sentinela
         if (this->actual < this->tamLista)
             this->actual++;
     }
 
     //Mover "actual" a la posicion anterior (izquierda)
-    void anterior() {
+    void anterior()
+    {
         //Sentinela
         if (this->actual > 0)
             this->actual--;
     }
 
     //Agregar un elemento a la lista (al final)
-    void agregar(E elemento) {
+    void agregar(E elemento)
+    {
         this->arreglo[this->tamLista++] = elemento;
     }
 
     // Agregar un elemento a la lista (al final)
-    void agregarOrdenadamente(E elemento) {
-        for (this->moverAInicio(); this->posicionActual() < this->longitud(); this->siguiente()) {
-            if (this->getValor() > elemento) {
+    void agregarOrdenadamente(E elemento)
+    {
+        for (this->moverAInicio(); this->posicionActual() < this->longitud(); this->siguiente())
+        {
+            if (this->getValor() > elemento)
+            {
                 break;
             }
         }
@@ -122,41 +135,48 @@ public:
     }
 
     //Retornar le numero de elementos de la lista
-    int longitud() {
+    int longitud()
+    {
         return this->tamLista;
     }
 
     //Retornar la posicion del elemento "actual"
-    int posicionActual() {
+    int posicionActual()
+    {
         return this->actual;
     }
 
     //"Actual" se mueve a la posicion "pos"
-    void moverAPosicion(int pos) {
+    void moverAPosicion(int pos)
+    {
         //Sentinela
         if (pos >= 0 && pos < this->tamLista)
             this->actual = pos;
     }
 
     //Retorna el valor que estaba en la posicion "actual"
-    E getValor() {
+    E getValor()
+    {
         return this->arreglo[this->actual];
     }
 
     //Modificar el valor en la posicion "actual"
-    void setValor(E elemento) {
+    void setValor(E elemento)
+    {
         this->arreglo[this->actual] = elemento;
     }
 
     //Limpiar la lista: dejarla vacia la lista
-    void limpiar() {
+    void limpiar()
+    {
         delete[] this->arreglo;
         this->tamLista = this->actual = 0;
         this->arreglo = new E[this->tamMax];
     }
 
     //Insertar un elemento donde se encuentra el puntero "actual"
-    void insertar(E elemento) {
+    void insertar(E elemento)
+    {
         for (int i = this->tamLista; i > this->actual; i--)
             this->arreglo[i] = this->arreglo[i - 1];
         this->arreglo[this->actual] = elemento;
@@ -164,7 +184,8 @@ public:
     }
 
     //Eliminar y retornar el elemento "actual"
-    E eliminar() {
+    E eliminar()
+    {
         E eliminado = this->arreglo[this->actual];
         for (int i = this->actual; i < this->tamLista; ++i)
             this->arreglo[i] = this->arreglo[i + 1];
@@ -173,8 +194,227 @@ public:
     }
 };
 
-template<typename Key, typename E>
-class Diccionario {
+//Nodo
+template <typename E>
+class Nodo
+{
+public:
+    E elemento;      //Valor para este nodo
+    Nodo *siguiente; //Puntero al siguiente nodo de la lista
+
+    //Constructor
+    Nodo(E elem, Nodo *proximo = NULL)
+    {
+        this->elemento = elem;
+        this->siguiente = proximo;
+    }
+    Nodo(Nodo *proximo = NULL)
+    {
+        this->siguiente = proximo;
+    }
+};
+
+//Clase hija: ListaEnlazada
+template <typename E>
+class ListaEnlazada : public Lista<E>
+{
+private:
+    Nodo<E *> *cabeza; //puntero al primer elemento
+    Nodo<E *> *cola;   //puntero al ultimo elemento
+    Nodo<E *> *actual; //puntero al elemento actual
+    int cantidad;      //tamanho de la lista
+
+    void inicializar()
+    {
+        this->cantidad = 0;
+        this->cola = this->actual = this->cabeza = new Nodo<E *>;
+    }
+
+    void eliminarTodo()
+    {
+        while (this->cabeza != NULL)
+        {
+            this->actual = this->cabeza;
+            this->cabeza = this->cabeza->siguiente;
+            delete actual;
+        }
+    }
+
+public:
+    //Constructor
+    ListaEnlazada()
+    {
+        inicializar();
+    }
+
+    //Destructor
+    ~ListaEnlazada()
+    {
+        eliminarTodo();
+    }
+
+    //Limpiar la lista: dejarla vacia la lista
+    void limpiar()
+    {
+        eliminarTodo();
+        inicializar();
+    }
+
+    //Insertar un elemento donde se encuentra el puntero "actual"
+    void insertar(E elemento)
+    {
+        this->actual->siguiente = new Nodo<E *>(new E(elemento), this->actual->siguiente);
+        if (this->cola == this->actual)
+            this->cola = this->actual->siguiente;
+        this->cantidad++;
+    }
+
+    //Agregar un elemento a la lista (al final)
+    void agregar(E elemento)
+    {
+        this->cola = this->cola->siguiente = new Nodo<E *>(new E(elemento), NULL);
+        this->cantidad++;
+    }
+
+    //Mover "actual" al inicio de la lista
+    void moverAInicio()
+    {
+        this->actual = this->cabeza;
+    }
+
+    //Mover "actual" al final de la lista
+    // primer espacio disponible
+    void moverAlFinal()
+    {
+        this->actual = this->cola;
+    }
+
+    //Mover "actual" a la posicion posterior (derecha)
+    void siguiente()
+    {
+        if (this->actual != this->cola)
+            this->actual = this->actual->siguiente;
+    }
+
+    //Retornar le numero de elementos de la lista
+    int longitud()
+    {
+        return this->cantidad;
+    }
+
+    //Retorna el valor que estaba en la posicion "actual"
+    E getValor()
+    {
+        if (this->actual->siguiente == NULL)
+        {
+            cout << "Valor no existe";
+            return NULL;
+        }
+        return *this->actual->siguiente->elemento;
+    }
+
+    //Modificar el valor en la posicion "actual"
+    void setValor(E elemento)
+    {
+        if (this->actual->siguiente == NULL)
+            cout << "Valor no existe";
+        else
+            *this->actual->siguiente->elemento = elemento;
+    }
+
+    //Mover "actual" a la posicion anterior (izquierda)
+    void anterior()
+    {
+        Nodo<E *> *temp = cabeza;
+        Nodo<E *> *tempActual = actual;
+
+        moverAInicio();
+        // int i;
+        for (int i = 0; tempActual != temp; ++i)
+        {
+            temp = temp->siguiente;
+            if (tempActual != temp)
+            {
+                siguiente();
+            }
+        }
+    }
+
+    //Retornar la posicion del elemento "actual"
+    int posicionActual()
+    {
+        Nodo<E *> *temp = cabeza;
+        int i;
+        for (i = 0; actual != temp; ++i)
+        {
+            temp = temp->siguiente;
+        }
+        return i;
+    }
+
+    //Libera de la memoria y retorna el elemento "actual"
+    E eliminar()
+    {
+        Nodo<E *> *tempActual = actual;
+        Nodo<E *> *temp = cabeza;
+
+        moverAInicio();
+        // int i;
+        for (int i = 0; tempActual != temp; ++i)
+        {
+            temp = temp->siguiente;
+            if (temp == tempActual && temp != cola)
+            {
+                actual = actual->siguiente->siguiente;
+            }
+            else
+            {
+                siguiente();
+            }
+        }
+
+        return *tempActual->elemento;
+    }
+
+    //"Actual" se mueve a la posicion "pos"
+    void moverAPosicion(int pos)
+    {
+    }
+
+    Nodo<E *> *getActualNodo()
+    {
+        return this->actual;
+    }
+
+    Nodo<E *> *getCabezaNodo()
+    {
+        return this->cabeza;
+    }
+
+    Nodo<E *> *getColaNodo()
+    {
+        return this->cola;
+    }
+
+    void reportarConNodos()
+    {
+        Nodo<int *> *temp = this->getCabezaNodo();
+        temp = temp->siguiente;
+
+        while (temp != NULL)
+        {
+            cout << "[" << *temp->elemento << "]";
+            temp = temp->siguiente;
+        }
+
+        cout << endl;
+    }
+};
+
+
+template <typename Key, typename E>
+class Diccionario
+{
 private:
 public:
     Diccionario() {}  //Constructor
@@ -208,8 +448,9 @@ public:
     virtual int longitud() = 0;
 };
 
-template<typename Key, typename E>
-class KVPar {
+template <typename Key, typename E>
+class KVPar
+{
 private:
     Key k;
     E e;
@@ -218,53 +459,63 @@ public:
     //Constructor
     KVPar() {}
 
-    KVPar(Key kval, E eval) {
+    KVPar(Key kval, E eval)
+    {
         this->k = kval;
         this->e = eval;
     }
 
-    KVPar(KVPar &o) {
+    KVPar(KVPar &o)
+    {
         this->k = o.k;
         this->e = o.e;
     }
 
-    Key key() {
+    Key key()
+    {
         return this->k;
     }
 
-    void setKey(Key ink) {
+    void setKey(Key ink)
+    {
         this->k = ink;
     }
 
-    E valor() {
+    E valor()
+    {
         return this->e;
     }
 };
 
-template<typename Key, typename E>
-class DiccionarioArreglo : public Diccionario<Key, E> {
+template <typename Key, typename E>
+class DiccionarioArreglo : public Diccionario<Key, E>
+{
 private:
-    ListaArreglo<KVPar<Key, E>*> *lista;
+    ListaArreglo<KVPar<Key, E> *> *lista;
 
 public:
-    DiccionarioArreglo(int tamanio) {
-        this->lista = new ListaArreglo<KVPar<Key, E>*>(tamanio);
+    DiccionarioArreglo(int tamanio)
+    {
+        this->lista = new ListaArreglo<KVPar<Key, E> *>(tamanio);
     }
 
-    ~DiccionarioArreglo() {
+    ~DiccionarioArreglo()
+    {
         delete this->lista;
     }
 
     //Reinicializacion de un diccionario
-    void limpiar() {
+    void limpiar()
+    {
         this->limpiar();
     };
 
     //Insertar un registro
     //k: la clave para el reigstro
     //e: el registro
-    void insertar(Key k, E e) {
-        KVPar<Key, E> *temp = new KVPar<Key, E> (k, e);
+    void insertar(Key k, E e)
+    {
+        KVPar<Key, E> *temp = new KVPar<Key, E>(k, e);
         this->lista->agregar(temp);
     };
 
@@ -273,9 +524,11 @@ public:
     //Retornar: un registro. Si hay mas de un registro con la misma clave,
     //  se debe remover uno de manera arbitraria
     //Retornar NULL si la clave "K" no se encuentra en el diccionario
-    E remover(Key k) {
+    E remover(Key k)
+    {
         E temp = this->encontrar(k);
-        if (temp != 0) {
+        if (temp != 0)
+        {
             this->lista->eliminar();
         }
         return temp;
@@ -283,7 +536,8 @@ public:
 
     //Remover y retornar un registro arbitrario del diccionario
     //Retornar: el registro que ha sido removido o NULL si no existe
-    E removerCualquiera() {
+    E removerCualquiera()
+    {
         this->lista->moverAlFinal();
         this->lista->anterior();
         KVPar<Key, E> *elem = this->lista->eliminar();
@@ -293,11 +547,13 @@ public:
     //Return: un registro o NULL si no existe
     //Si hay multiples registros, se debe retornar uno de manera aleatoria
     //K: la clave del registro a encontrar
-    E encontrar(Key k) {
+    E encontrar(Key k)
+    {
         for (
-                this->lista->moverAInicio();
-                this->lista->posicionActual() < this->lista->longitud();
-                this->lista->siguiente()) {
+            this->lista->moverAInicio();
+            this->lista->posicionActual() < this->lista->longitud();
+            this->lista->siguiente())
+        {
             KVPar<Key, E> *temp = this->lista->getValor();
             if (k == temp->key())
                 return temp->valor();
@@ -306,87 +562,159 @@ public:
     };
 
     //Retornar el número de registros dentro del diccionario
-    int longitud() {
+    int longitud()
+    {
         return this->lista->longitud();
     };
 
-    void imprimir() {
-        for(this->lista->moverAInicio();
-            this->lista->posicionActual() < this->lista->longitud();
-            this->lista->siguiente()){
+    void imprimir()
+    {
+        for (this->lista->moverAInicio();
+             this->lista->posicionActual() < this->lista->longitud();
+             this->lista->siguiente())
+        {
             cout << "Token: " << this->lista->getValor()->key() << ", Frecuencia: " << this->lista->getValor()->valor() << endl;
         }
     }
 };
 
-template<typename Key, typename E>
-class EspaciosMetricos {
+class EspaciosMetricos
+{
 private:
-    DiccionarioArreglo<Key, E> *diccionario;
-    int tamanio;
+    ListaArreglo<string> *tokens;
+    ListaArreglo<string> *corpus;
+    // ListaArreglo<KVPar<string, char *>* > *corpus;
+    ListaArreglo<char *> *vectores;
+    DiccionarioArreglo<char *, string> *corpusVectorizado;
+
+    void agregarToken(string token)
+    {
+        this->tokens->moverAInicio();
+        while (this->tokens->posicionActual() < this->tokens->longitud())
+        {
+            if (this->tokens->getValor() == token)
+                return;
+            this->tokens->siguiente();
+        }
+        this->tokens->agregar(token);
+    }
+
+    void splitTextInTokens(string txt, char ch = ' ')
+    {
+        size_t pos = txt.find(ch);
+        size_t initialPos = 0;
+
+        // Decompose statement
+        while (pos != std::string::npos)
+        {
+            this->agregarToken(txt.substr(initialPos, pos - initialPos));
+            initialPos = pos + 1;
+
+            pos = txt.find(ch, initialPos);
+        }
+
+        // Add the last one
+        this->agregarToken(txt.substr(initialPos, min(pos, txt.size()) - initialPos + 1));
+    }
+
+    char* bagOfWords(string txt)
+    {
+        char *vector = new char[this->tokens->longitud()];
+        int idx = 0;
+        for (this->tokens->moverAInicio();
+             this->tokens->posicionActual() < this->tokens->longitud();
+             this->tokens->siguiente())
+        {
+            if (txt.find(this->tokens->getValor()) == string::npos)
+                vector[idx] = '0';
+            else
+                vector[idx] = '1';
+        }
+        return vector;
+    }
+
+    int distanciaMinkouski(char *query, char *vector)
+    {
+        int d = 0;
+        for(int i = 0; i < strlen(query); i++)
+        {
+            if (query[i] != vector[i])
+                d++;
+        }
+        return d;
+    }
 
 public:
     int colisiones = 0;
 
-    EspaciosMetricos(int tamanio) {
-        this->tamanio = tamanio;
-        this->diccionario = new DiccionarioArreglo<Key, E>(tamanio);
-    }
-
-    ~EspaciosMetricos() {
-        delete this->diccionario;
-    }
-
-    void limpiar() {
-        this->diccionario->limpiar();
-    }
-
-    void insertar(Key k) {
-        this->splitString(k);
-    }
-
-    int longitud() {
-        return this->diccionario->longitud();
-    }
-
-    void agregarToken(string token) {
-        int frecuencia = this->diccionario->encontrar(token);
-        if (frecuencia == 0) {
-            cout << "fecuencia es 0" << endl;
-        }
-        this->diccionario->insertar(token, frecuencia++);
-    }
-
-    string splitString(string txt, char ch = ' ')
+    EspaciosMetricos()
     {
-        size_t pos = txt.find( ch );
-        size_t initialPos = 0;
-
-        // Decompose statement
-        while( pos != std::string::npos ) {
-            this->agregarToken( txt.substr( initialPos, pos - initialPos ) );
-            initialPos = pos + 1;
-
-            pos = txt.find( ch, initialPos );
-        }
-
-        // Add the last one
-        this->agregarToken( txt.substr( initialPos, min( pos, txt.size() ) - initialPos + 1 ) );
+        this->tokens = new ListaArreglo<string>(100);
+        this->vectores = new ListaArreglo<char *>(100);
     }
 
-    void imprimirTokens() {
-        this->diccionario->imprimir();
+    ~EspaciosMetricos()
+    {
+        delete this->tokens;
+        delete this->vectores;
+    }
+
+    void limpiar()
+    {
+        this->tokens->limpiar();
+        this->vectores->limpiar();
+    }
+
+    void insertarCorpus(string k)
+    {
+        this->splitTextInTokens(k);
+        this->corpus->agregar(k);
+    }
+
+    void vectorizarCorpus()
+    {
+        for (this->corpus->moverAInicio();
+             this->corpus->posicionActual() < this->corpus->longitud();
+             this->corpus->siguiente())
+        {
+            string txt = corpus->getValor();
+            char *vector = this->bagOfWords(txt);
+            this->corpusVectorizado->insertar(vector, txt);
+            this->vectores->agregar(vector);
+        }
+    }
+
+    void rangeQuery(string query, int sensibilidad)
+    {
+        ListaEnlazada<string> *textosConSimilitud = new ListaEnlazada<string>();
+        char *queryVectorizado = this->bagOfWords(query);
+
+        for (this->vectores->moverAInicio();
+             this->vectores->posicionActual() < this->vectores->longitud();
+             this->vectores->siguiente())
+        {
+            char *vectorCorpus = this->vectores->getValor();
+            int d = this->distanciaMinkouski(queryVectorizado, vectorCorpus);
+            if (d == sensibilidad) {
+                textosConSimilitud->agregar(this->corpusVectorizado->encontrar(vectorCorpus));
+            }
+        }
+
+        corpusVectorizado->imprimir();
     }
 };
 
-int main() {
-    EspaciosMetricos<string, int> *corpus = new EspaciosMetricos<string, int>(100);
-    corpus->insertar("oferta celular hoy");
-    corpus->insertar("matricula semestre");
-    corpus->insertar("oferta viaje");
-    corpus->insertar("tarea semestre");
+int main()
+{
+    EspaciosMetricos *espacioMetrico = new EspaciosMetricos();
+    espacioMetrico->insertarCorpus("oferta celular hoy");
+    espacioMetrico->insertarCorpus("matricula semestre");
+    espacioMetrico->insertarCorpus("oferta viaje");
+    espacioMetrico->insertarCorpus("tarea semestre");
 
-    corpus->imprimirTokens();
+    espacioMetrico->vectorizarCorpus();
+
+    espacioMetrico->rangeQuery("oferta matricula", 2);
 
     return 0;
 }
