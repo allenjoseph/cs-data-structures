@@ -3,5 +3,5 @@ project(cs_data_structures)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(hash src/hash/espacios-metricos.cpp)
+add_executable(graph src/graphs/_graph.cpp)
 
