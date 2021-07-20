@@ -103,7 +103,7 @@ public:
 
     void anterior()
     {
-        if (this->actual != 0)
+        if (this->actual > 0)
         {
             this->actual--;
         }
@@ -228,9 +228,9 @@ private:
     ListaArreglo<Key *> *lista;
 
 public:
-    SetBasico(int tamanho = 100)
+    SetBasico(int tamanio = 100)
     {
-        this->lista = new ListaArreglo<Key *>(tamanho);
+        this->lista = new ListaArreglo<Key *>(tamanio);
     }
 
     ~SetBasico()
@@ -255,8 +255,11 @@ public:
     void remover(Key k)
     {
         int pos = this->encontrar(k);
-        this->lista->moverAPosicion(pos);
-        this->lista->eliminar();
+        if (pos > -1)
+        {
+            this->lista->moverAPosicion(pos);
+            this->lista->eliminar();
+        }
     }
 
     Key removerCualquiera()
@@ -269,7 +272,10 @@ public:
     int encontrar(Key k)
     {
         this->lista->moverAInicio();
-        for (this->lista->moverAInicio(); this->lista->posicionActual() < this->lista->longitud(); this->lista->siguiente())
+        for (
+            this->lista->moverAInicio();
+            this->lista->posicionActual() < this->lista->longitud();
+            this->lista->siguiente())
         {
             if (this->lista->getValor() != nullptr && *this->lista->getValor() == k)
             {
