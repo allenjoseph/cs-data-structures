@@ -1,6 +1,9 @@
 #include <iostream>
 #include <chrono>
+#include <iomanip>
 #include <fstream>
+#include <filesystem>
+#include <cmath>
 
 using namespace std;
 
@@ -448,18 +451,16 @@ public:
         return this->cola;
     }
 
-    void reportarConNodos()
+    void imprimir()
     {
-        Nodo<int *> *temp = this->getCabezaNodo();
+        Nodo<E *> *temp = this->getCabezaNodo();
         temp = temp->siguiente;
 
         while (temp != NULL)
         {
-            cout << "[" << *temp->elemento << "]";
+            cout << *temp->elemento << endl;
             temp = temp->siguiente;
         }
-
-        cout << endl;
     }
 };
 
@@ -499,102 +500,128 @@ public:
     virtual int longitud() = 0;
 };
 
-template <typename Key, typename E>
-class DiccionarioArreglo : public Diccionario<Key, E>
+//clase abstracta cola
+template <typename E>
+class Cola
 {
 private:
-    ListaArreglo<KVPar<Key, E> *> *lista;
-
+    void operator=(const Cola &) {} //Proteccion asignada
+    Cola(const Cola &) {}           //Constructor Proteccion copia
 public:
-    DiccionarioArreglo(int tamanio = 10)
+    Cola() {}          //por defecto
+    virtual ~Cola() {} //Base destructor
+
+    //Reinicializar la cola. El usuario es responsable
+    //por reclamar el espacio utilizado por el elemento
+    //de la cola
+    virtual void clear() = 0;
+
+    //colocar un elemento en la parte de atras de la cola
+    //it: el elemento siendo encolado
+    virtual void encolar(E) = 0;
+
+    //Remover y retornar elementos al frente de la cola
+    //Retornar: El elemento en el frente de la cola.
+    virtual E desencolar() = 0;
+
+    //Retornar: Una copia de el elemento frontal
+    virtual E valorFrontal() = 0;
+
+    //Retornar: El numero de elementos in la cola .
+    virtual int longitud() = 0;
+};
+
+template <typename E>
+class LCola : public Cola<E>
+{
+private:
+    Nodo<E> *base;
+    Nodo<E> *cima;
+    int tam; //Tamanio de la cola
+public:
+    LCola()
     {
-        this->lista = new ListaArreglo<KVPar<Key, E> *>(tamanio);
+        this->base = NULL;
+        this->cima = NULL;
+        this->tam = 0;
     }
 
-    ~DiccionarioArreglo()
+    ~LCola()
     {
-        delete this->lista;
+        clear();
     }
 
-    void limpiar()
+    void clear()
     {
-        this->limpiar();
-    };
-
-    void insertar(Key k, E e)
-    {
-        KVPar<Key, E> *temp = new KVPar<Key, E>(k, e);
-        this->lista->agregar(temp);
-    };
-
-    E remover(Key k)
-    {
-        E temp = this->encontrar(k);
-        if (temp != NULL)
+        while (this->base != NULL)
         {
-            this->lista->eliminar();
+            Nodo<E> *tmp = this->base;
+            this->base = this->base->siguiente;
+            delete tmp;
         }
+        this->tam = 0;
+    }
 
-        return temp;
-    };
-
-    E removerCualquiera()
+    void encolar(E val)
     {
-        this->lista->moverAlFinal();
-        this->lista->anterior();
-        KVPar<Key, E> *elem = this->lista->eliminar();
-        return elem->valor();
-    };
+        Nodo<E> *tmp = new Nodo<E>(val, NULL);
+        if (this->tam == 0)
+            this->base = tmp;
+        else
+            this->cima->siguiente = tmp;
 
-    E encontrar(Key k)
+        this->cima = tmp;
+        this->tam++;
+    }
+
+    E desencolar()
     {
-        for (
-            this->lista->moverAInicio();
-            this->lista->posicionActual() < this->lista->longitud();
-            this->lista->siguiente())
-        {
-            KVPar<Key, E> *temp = this->lista->getValor();
-            if (k == temp->key())
-                return temp->valor();
-        }
+        E elemento = this->base->elemento;
+        if (this->tam == 0)
+            return NULL;
 
-        return NULL;
-    };
+        Nodo<E> *tmp = this->base;
+        this->base = this->base->siguiente;
+        delete tmp;
+
+        this->tam--;
+        return elemento;
+    }
+
+    E valorFrontal()
+    {
+        return this->base->elemento;
+    }
 
     int longitud()
     {
-        return this->lista->longitud();
-    };
-
-    void imprimir()
-    {
-        this->imprimir();
+        return this->tam;
     }
 };
 
-// HastTable with separate chaining strategy
 template <typename Key, typename E>
-class DiccionarioHash : public Diccionario<Key, E>
+class DiccionarioTablasHash : public Diccionario<Key, E>
 {
 private:
-
-    ListaArreglo<KVPar<int, ListaEnlazada<KVPar<Key, E> *> *> *> *lista;
+    ListaArreglo<KVPar<int, E> *> *lista;
     int tamanio;
     int cantidad;
 
-    int hash(char *k)
+    int hash(Key k)
     {
-
         int sum = 0;
-        for (char *it = k; *it; ++it)
-        {
-            int ascii = *it;
-            sum += ascii;
-        }
+        int idx = 0;
+        for_each(k.begin(), k.end(), [&](char ch)
+                 {
+                     int ascii = ch;
+                    //  sum += ascii;
+                     sum += ascii * (10^idx);
+                     idx++;
+                 });
         return sum % this->tamanio;
     }
 
-    ListaEnlazada<KVPar<Key, E> *> *encontrarInterno(Key k)
+    E encontrarInterno(Key k)
     {
         int hash = this->hash(k);
         for (
@@ -602,7 +629,7 @@ private:
             this->lista->posicionActual() < this->lista->longitud();
             this->lista->siguiente())
         {
-            KVPar<int, ListaEnlazada<KVPar<Key, E> *> *> *temp = this->lista->getValor();
+            KVPar<int, E> *temp = this->lista->getValor();
             if (temp != nullptr && hash == temp->key())
             {
                 return temp->valor();
@@ -613,14 +640,14 @@ private:
     }
 
 public:
-    DiccionarioHash(int tamanio)
+    DiccionarioTablasHash(int tamanio)
     {
         this->tamanio = tamanio;
-        this->lista = new ListaArreglo<KVPar<int, ListaEnlazada<KVPar<Key, E> *> *> *>(tamanio);
+        this->lista = new ListaArreglo<KVPar<int, E> *>(tamanio);
         this->cantidad = 0;
     }
 
-    ~DiccionarioHash()
+    ~DiccionarioTablasHash()
     {
         delete this->lista;
     }
@@ -633,33 +660,38 @@ public:
     void insertar(Key k, E e)
     {
         int hash = this->hash(k);
-        ListaEnlazada<KVPar<Key, E> *> *temp = this->encontrarInterno(k);
+        E temp = this->encontrarInterno(k);
 
-        KVPar<Key, E> *kv = new KVPar<Key, E>(k, e);
         if (temp == NULL)
         {
-            ListaEnlazada<KVPar<Key, E> *> *l = new ListaEnlazada<KVPar<Key, E> *>();
-            l->insertar(kv);
-            this->lista->insertar(new KVPar<int, ListaEnlazada<KVPar<Key, E> *> *> (hash, l));
-        } else{
-            temp->insertar(kv);
+            this->lista->insertar(new KVPar<int, E>(hash, e));
+        }
+        else
+        {
+            temp->insertar(e->getValor());
         }
     };
 
     E remover(Key k)
     {
-        ListaEnlazada<KVPar<Key, E> *> *temp = this->encontrarInterno(k);
-        for (
-            temp->moverAInicio();
-            temp->posicionActual() < temp->longitud();
-            temp->siguiente())
+        int hash = this->hash(k);
+        E temp = this->encontrarInterno(k);
+
+        if (temp != NULL)
         {
-            KVPar<Key, E> *val = temp->getValor();
-            if (val->key() == k)
+            for (
+                this->lista->moverAInicio();
+                this->lista->posicionActual() < this->lista->longitud();
+                this->lista->siguiente())
             {
-                return val->valor();
+                if (this->lista->getValor()->key() == hash)
+                {
+                    this->lista->eliminar();
+                    break;
+                }
             }
         }
+        return temp;
     };
 
     E removerCualquiera()
@@ -667,33 +699,14 @@ public:
         this->lista->moverAlFinal();
         this->lista->anterior();
 
-        KVPar<int, ListaEnlazada<KVPar<Key, E> *> *> *temp = this->lista->getValor();
-        ListaEnlazada<KVPar<Key, E> *> *templist = temp->valor();
-        templist->moverAlFinal();
-        templist->anterior();
-        KVPar<Key, E> * elem = templist->eliminar();
-        elem->valor();
+        KVPar<int, E> *temp = this->lista->getValor();
+        this->lista->eliminar();
+        return temp->valor();
     };
 
     E encontrar(Key k)
     {
-        ListaEnlazada<KVPar<Key, E> *> *templist = this->encontrarInterno(k);
-        if (templist != NULL)
-        {
-            for (
-                templist->moverAInicio();
-                templist->posicionActual() < templist->longitud();
-                templist->siguiente())
-            {
-                KVPar<Key, E> *val = templist->getValor();
-                if (val->key() == k)
-                {
-                    return val->valor();
-                }
-            }
-        }
-
-        return NULL;
+        return this->encontrarInterno(k);
     };
 
     int longitud()
@@ -707,24 +720,178 @@ public:
     }
 };
 
-class pln
+//Nodo Arbol
+template <typename E>
+class NodoArbol {
+private:
+    E e; 
+    NodoArbol* izq;
+    NodoArbol* der;
+public:
+    NodoArbol() {
+        this->izq = this->der = NULL;
+    }
+
+    NodoArbol(E eval, NodoArbol* ival = NULL,  NodoArbol* dval = NULL)
+    {
+        this->e = eval;
+        this->izq = ival;
+        this->der = dval;
+    }
+
+    ~NodoArbol() {}
+
+    E valor() {
+        return e;
+    };
+
+    void setValor(E eval) {
+        this->e = eval;
+    };
+
+    NodoArbol* izquierda() {
+        return this->izq;
+    };
+
+    void setIzquierda(NodoArbol* ival) {
+        this->izq = ival;
+    };
+
+    NodoArbol* derecha() {
+        return this->der;
+    };
+
+    void setDerecha(NodoArbol* dval) {
+        this->der = dval;
+    };
+
+    bool isHoja() {
+        return this->izq == NULL && this->der == NULL;
+    };
+};
+
+template <typename E>
+class ArbolBalanceado
+{
+private:
+    NodoArbol<E> *raiz;
+    int tam;
+    int count;
+
+public:
+    ArbolBalanceado()
+    {
+        this->raiz = NULL;
+        this->tam = 0;
+        this->count = 0;
+    }
+
+    ~ArbolBalanceado()
+    {
+        delete raiz;
+    }
+
+    void insertar(E e)
+    {
+        if (this->raiz == NULL)
+        {
+            this->raiz = new NodoArbol<E>(e);
+        } else
+        {
+            //..
+        }
+    }
+};
+
+class nlp
 {
 private:
     ListaEnlazada<string> *listaCorpus;
-    DiccionarioArreglo<string, int *> *bagOfWords;
-    DiccionarioHash<char *, string> *hashtable;
+    ListaEnlazada<string> *stopwords;
+    ListaEnlazada<string> *freqwords;
+    ListaEnlazada<KVPar<string, int *> *> *bagOfWords;
+    DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *> *hashtable;
+    int pMinkouski = 1;
 
     void agregarWord(string word)
     {
-        // TODO: validar que no es stopword
-        int *frecuencia = this->bagOfWords->encontrar(word);
-        if (frecuencia != NULL)
+        if (word[0] == '@')
         {
-            (*frecuencia)++;
+            return;
         }
-        else
+
+        string cleanWord;
+        for_each(word.begin(), word.end(), [&](char ch)
+                 {
+                     if (ch == ' ')
+                     {
+                         cleanWord += ch;
+                     }
+                     else if ((int)ch == -95 || (int)ch == -127)
+                     {
+                         cleanWord += 'a';
+                     }
+                     else if ((int)ch == -87 || (int)ch == -119)
+                     {
+                         cleanWord += 'e';
+                     }
+                     else if ((int)ch == -83 || (int)ch == -115)
+                     {
+                         cleanWord += 'i';
+                     }
+                     else if ((int)ch == -77 || (int)ch == -109)
+                     {
+                         cleanWord += 'o';
+                     }
+                     else if ((int)ch == -70 || (int)ch == -102)
+                     {
+                         cleanWord += 'u';
+                     }
+                     else if ((int)ch == -79 || (int)ch == -111)
+                     {
+                         cleanWord += 'n';
+                     }
+                     else if (isalnum(ch))
+                     {
+                         cleanWord += tolower(ch);
+                     }
+                 });
+
+        if (cleanWord.empty())
         {
-            this->bagOfWords->insertar(word, new int(0));
+            return;
+        }
+
+        for (
+            this->stopwords->moverAInicio();
+            this->stopwords->posicionActual() < this->stopwords->longitud();
+            this->stopwords->siguiente())
+        {
+            string stopword = this->stopwords->getValor();
+            if (stopword == cleanWord)
+                return;
+        }
+
+        bool wordexists = false;
+        for (
+            this->bagOfWords->moverAInicio();
+            this->bagOfWords->posicionActual() < this->bagOfWords->longitud();
+            this->bagOfWords->siguiente())
+        {
+            KVPar<string, int *> *wordfreq = this->bagOfWords->getValor();
+            if (wordfreq->key() == cleanWord)
+            {
+                int *frecuencia = wordfreq->valor();
+                (*frecuencia)++;
+                wordexists = true;
+                break;
+            }
+        }
+
+        if (!wordexists)
+        {
+            KVPar<string, int *> *newword = new KVPar<string, int *>(cleanWord, new int(1));
+            this->bagOfWords->insertar(newword);
         }
     }
 
@@ -733,35 +900,39 @@ private:
         char ch = ' ';
         size_t pos = corpus.find(ch);
         size_t initialPos = 0;
+        string word;
 
         // Decompose statement
         while (pos != std::string::npos)
         {
-            this->agregarWord(corpus.substr(initialPos, pos - initialPos));
+            word = corpus.substr(initialPos, pos - initialPos);
+            this->agregarWord(word);
             initialPos = pos + 1;
             pos = corpus.find(ch, initialPos);
         }
 
         // Add the last one
-        this->agregarWord(corpus.substr(initialPos, min(pos, corpus.size()) - initialPos + 1));
+        word = corpus.substr(initialPos, min(pos, corpus.size()) - initialPos + 1);
+        this->agregarWord(word);
     }
 
-    char *vectorizar(string corpus)
+    string vectorizar(string corpus)
     {
         char ch = ' ';
         size_t pos = corpus.find(ch);
         size_t initialPos = 0;
 
+        ListaEnlazada<string> *tokens = new ListaEnlazada<string>();
         string token;
-        char *vector = new char[this->bagOfWords->longitud()];
-        int idx = 0;
+        string vector;
+        bool exists;
+        string freqword;
 
         // Decompose statement
         while (pos != std::string::npos)
         {
             token = corpus.substr(initialPos, pos - initialPos);
-            int *fecuencia = this->bagOfWords->encontrar(token);
-            vector[idx] = fecuencia == NULL ? '0' : '1';
+            tokens->insertar(token);
 
             initialPos = pos + 1;
             pos = corpus.find(ch, initialPos);
@@ -769,32 +940,78 @@ private:
 
         // Add the last one
         token = corpus.substr(initialPos, min(pos, corpus.size()) - initialPos + 1);
-        int *fecuencia = this->bagOfWords->encontrar(token);
-        vector[idx] = fecuencia == NULL ? '0' : '1';
+        tokens->insertar(token);
+
+        for (
+            this->freqwords->moverAInicio();
+            this->freqwords->posicionActual() < this->freqwords->longitud();
+            this->freqwords->siguiente())
+        {
+            freqword = this->freqwords->getValor();
+            exists = false;
+            for (
+                tokens->moverAInicio();
+                tokens->posicionActual() < tokens->longitud();
+                tokens->siguiente())
+            {
+                if (tokens->getValor() == freqword)
+                {
+                    exists = true;
+                    break;
+                }
+            }
+            vector += exists ? '1' : '0';
+        }
 
         return vector;
     }
 
-    // int distanciaMinkouski(char *query, char *vector)
-    // {
-    //     int d = 0;
-    //     for (int i = 0; i < strlen(query); i++)
-    //     {
-    //         if (query[i] != vector[i])
-    //             d++;
-    //     }
-    //     return d;
-    // }
-
-public:
-    pln()
+    int distanciaMinkouski(string vQuery, string vCorpus)
     {
-        this->listaCorpus = new ListaEnlazada<string>();
-        this->bagOfWords = new DiccionarioArreglo<string, int *>(1000);
+        int d = 0;
+        int idx = 0;
+        while (idx < vQuery.size())
+        {
+            d += pow(abs((int)vQuery.at(idx) - (int)vCorpus.at(idx)), pMinkouski);
+            idx++;
+        }
+        return pow(d, 1 / pMinkouski);
     }
 
-    ~pln()
+    void readFile(string filename, ListaEnlazada<string> *lista)
     {
+        string line;
+        ifstream reader(filename);
+
+        if (reader)
+            while (!reader.eof())
+            {
+                getline(reader, line);
+                lista->insertar(line);
+            }
+
+        if (!reader)
+            cout << "No pudimos abrir el archivo " << filename << endl;
+
+        reader.close();
+    }
+
+public:
+    nlp()
+    {
+        this->listaCorpus = new ListaEnlazada<string>();
+        this->stopwords = new ListaEnlazada<string>();
+        this->bagOfWords = new ListaEnlazada<KVPar<string, int *> *>();
+        this->freqwords = new ListaEnlazada<string>();
+    }
+
+    ~nlp()
+    {
+        delete this->listaCorpus;
+        delete this->stopwords;
+        delete this->freqwords;
+        delete this->bagOfWords;
+        delete this->hashtable;
     }
 
     void limpiar()
@@ -805,68 +1022,111 @@ public:
 
     void cargarCorpus()
     {
-        ifstream sw("corpus.txt");
+        cout << "\nCargando archivo de corpus y de stopwords..." << endl;
+        this->readFile("corpus.txt", this->listaCorpus);
+        this->readFile("stopwords-es.txt", this->stopwords);
+    }
 
-        string txt;
-        while (sw.good())
-        {
-            getline(sw, txt);
-            this->listaCorpus->insertar(txt);
-            // TODO: limpiar corpus de signos de puntacion
-            // TODO: transformar en minúsculas
-            string corpus = txt;
-            this->actualizarBagOfWords(corpus);
-        }
-        sw.close();
-
-        this->hashtable = new DiccionarioHash<char *, string>(this->bagOfWords->longitud());
-
+    void extraerTokens()
+    {
+        cout << "\nExtrayendo tokens del corpus..." << endl;
+        string corpusText;
         for (
             this->listaCorpus->moverAInicio();
             this->listaCorpus->posicionActual() < this->listaCorpus->longitud();
             this->listaCorpus->siguiente())
         {
-            // TODO: limpiar corpus de signos de puntacion
-            // TODO: transformar en minúsculas
-            string corpus = this->listaCorpus->getValor();
-            char *vector = this->vectorizar(corpus);
-            this->hashtable->insertar(vector, corpus);
-            // this->actualizarHashtable(vector, corpus);
+            corpusText = this->listaCorpus->getValor();
+            this->actualizarBagOfWords(corpusText);
         }
+        cout << "Tokens extraidos: " << this->bagOfWords->longitud() << endl;
+    }
+
+    void filtrarTokensMasFrecuentes(int frecuencia = 10)
+    {
+        for (
+            this->bagOfWords->moverAInicio();
+            this->bagOfWords->posicionActual() < this->bagOfWords->longitud();
+            this->bagOfWords->siguiente())
+        {
+            if (*this->bagOfWords->getValor()->valor() >= frecuencia)
+            {
+                this->freqwords->insertar(this->bagOfWords->getValor()->key());
+            }
+        }
+        cout << "Tokens con frecuencia >= " << frecuencia << ": " << this->freqwords->longitud() << endl;
+    }
+
+    void almacenarEnTablasHash()
+    {
+        cout << "\nAlmacenando en tablas hash..." << endl;
+        string corpusText;
+        this->hashtable = new DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *>(this->freqwords->longitud());
+        for (
+            this->listaCorpus->moverAInicio();
+            this->listaCorpus->posicionActual() < this->listaCorpus->longitud();
+            this->listaCorpus->siguiente())
+        {
+            corpusText = this->listaCorpus->getValor();
+            string vector = this->vectorizar(corpusText);
+            KVPar<string, string> *KVVectorCorpus = new KVPar<string, string>(vector, corpusText);
+
+            ListaEnlazada<KVPar<string, string> *> *vectorCorpus = new ListaEnlazada<KVPar<string, string> *>();
+            vectorCorpus->insertar(KVVectorCorpus);
+            this->hashtable->insertar(vector, vectorCorpus);
+        }
+        cout << "Espacios ocupados: " << this->hashtable->longitud() << endl;
+    }
+
+    void almacenarEnArbolBalanceado()
+    {
     }
 
     void rangeQuery(string query, int sensibilidad)
     {
-        // ListaEnlazada<string> *textosConSimilitud = new ListaEnlazada<string>();
-        // char *queryVectorizado = this->bagOfWords(query);
+        ListaEnlazada<string> *textosConSimilitud = new ListaEnlazada<string>();
 
-        // for (this->vectores->moverAInicio();
-        //      this->vectores->posicionActual() < this->vectores->longitud();
-        //      this->vectores->siguiente())
-        // {
-        //     char *vectorCorpus = this->vectores->getValor();
-        //     int d = this->distanciaMinkouski(queryVectorizado, vectorCorpus);
-        //     if (d == sensibilidad)
-        //     {
-        //         textosConSimilitud->agregar(this->corpusVectorizado->encontrar(vectorCorpus));
-        //     }
-        // }
+        string queryVectorizado = this->vectorizar(query);
+        cout << "query vectorizado: " << queryVectorizado << endl;
 
-        // corpusVectorizado->imprimir();
+        ListaEnlazada<KVPar<string, string> *> *corpusList = this->hashtable->encontrar(queryVectorizado);
+        cout << corpusList->longitud() << " posibles resultados." << endl;
+        for (
+            corpusList->moverAInicio();
+            corpusList->posicionActual() < corpusList->longitud();
+            corpusList->siguiente())
+        {
+            KVPar<string, string> *vectorCorpus = corpusList->getValor();
+            int d = this->distanciaMinkouski(queryVectorizado, vectorCorpus->key());
+            if (d <= sensibilidad)
+            {
+                textosConSimilitud->agregar(vectorCorpus->valor());
+            }
+        }
+        textosConSimilitud->imprimir();
     }
 };
 
 int main()
 {
-    // EspaciosMetricos *espacioMetrico = new EspaciosMetricos();
-    // espacioMetrico->insertarCorpus("oferta celular hoy");
-    // espacioMetrico->insertarCorpus("matricula semestre");
-    // espacioMetrico->insertarCorpus("oferta viaje");
-    // espacioMetrico->insertarCorpus("tarea semestre");
+    nlp *test = new nlp();
+    test->cargarCorpus();
 
-    // espacioMetrico->vectorizarCorpus();
+    test->extraerTokens();
 
-    // espacioMetrico->rangeQuery("oferta matricula", 2);
+    test->filtrarTokensMasFrecuentes();
 
+    test->almacenarEnTablasHash();
+    // text->almacenarEnArbolBalanceado();
+
+    string query;
+    int distancia;
+    cout << "\nINGRESA UN TEXTO A BUSCAR: ";
+    getline(cin, query);
+    cout << "RADIO DE BUSQUEDA: ";
+    cin >> distancia;
+    test->rangeQuery(query, distancia);
+
+    delete test;
     return 0;
 }

@@ -3,5 +3,5 @@ project(cs_data_structures)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(graph src/graphs/pln.cpp)
+add_executable(nlp src/npl/nlp.cpp)
 
