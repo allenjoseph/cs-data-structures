@@ -614,8 +614,8 @@ private:
         for_each(k.begin(), k.end(), [&](char ch)
                  {
                      int ascii = ch;
-                    //  sum += ascii;
-                     sum += ascii * (10^idx);
+                     //  sum += ascii;
+                     sum += ascii * (10 ^ idx);
                      idx++;
                  });
         return sum % this->tamanio;
@@ -722,50 +722,74 @@ public:
 
 //Nodo Arbol
 template <typename E>
-class NodoArbol {
+class NodoArbol
+{
 private:
-    E e; 
-    NodoArbol* izq;
-    NodoArbol* der;
+    E e;
+    NodoArbol *izq;
+    NodoArbol *der;
+    NodoArbol *pad;
+
 public:
-    NodoArbol() {
+    int altura = 0;
+
+    NodoArbol()
+    {
         this->izq = this->der = NULL;
     }
 
-    NodoArbol(E eval, NodoArbol* ival = NULL,  NodoArbol* dval = NULL)
+    NodoArbol(E eval, NodoArbol *ival = NULL, NodoArbol *dval = NULL)
     {
         this->e = eval;
         this->izq = ival;
         this->der = dval;
+        this->pad = NULL;
     }
 
     ~NodoArbol() {}
 
-    E valor() {
+    E valor()
+    {
         return e;
     };
 
-    void setValor(E eval) {
+    void setValor(E eval)
+    {
         this->e = eval;
     };
 
-    NodoArbol* izquierda() {
+    NodoArbol *izquierda()
+    {
         return this->izq;
     };
 
-    void setIzquierda(NodoArbol* ival) {
+    void setIzquierda(NodoArbol *ival)
+    {
         this->izq = ival;
     };
 
-    NodoArbol* derecha() {
+    NodoArbol *derecha()
+    {
         return this->der;
     };
 
-    void setDerecha(NodoArbol* dval) {
+    void setDerecha(NodoArbol *dval)
+    {
         this->der = dval;
     };
 
-    bool isHoja() {
+    NodoArbol *padre()
+    {
+        return this->pad;
+    };
+
+    void setPadre(NodoArbol *pval)
+    {
+        this->pad = pval;
+    };
+
+    bool esHoja()
+    {
         return this->izq == NULL && this->der == NULL;
     };
 };
@@ -774,16 +798,14 @@ template <typename E>
 class ArbolBalanceado
 {
 private:
-    NodoArbol<E> *raiz;
+    NodoArbol<KVPar<int, E> *> *raiz;
     int tam;
-    int count;
 
 public:
     ArbolBalanceado()
     {
         this->raiz = NULL;
         this->tam = 0;
-        this->count = 0;
     }
 
     ~ArbolBalanceado()
@@ -791,15 +813,192 @@ public:
         delete raiz;
     }
 
-    void insertar(E e)
+    void actualizarAlturaNodo(NodoArbol<KVPar<int, E> *> *nodo)
     {
-        if (this->raiz == NULL)
+        if (nodo->izquierda() != NULL && nodo->derecha() != NULL)
+            nodo->altura = 1 + max(nodo->izquierda()->altura, nodo->derecha()->altura);
+        else if (nodo->izquierda() != NULL)
+            nodo->altura = 1 + nodo->izquierda()->altura;
+        else if (nodo->derecha() != NULL)
+            nodo->altura = 1 + nodo->derecha()->altura;
+        else
+            nodo->altura = 0;
+    }
+
+    NodoArbol<KVPar<int, E> *>* actualizarAlturaArbol(NodoArbol<KVPar<int, E> *> *nodo)
+    {
+        NodoArbol<KVPar<int, E> *> *temp = nodo->padre();
+        while (temp != NULL)
         {
-            this->raiz = new NodoArbol<E>(e);
-        } else
-        {
-            //..
+            this->actualizarAlturaNodo(temp);
+            temp = temp->padre();
         }
+        return temp;
+    }
+
+    int calcularDiferenciaAltura(NodoArbol<KVPar<int, E> *> *nodo)
+    {
+        if (nodo == NULL)
+            return 0;
+        else if (nodo->esHoja())
+            return 0;
+        else if (nodo->izquierda() == NULL)
+            return (-1 - (nodo->derecha()->altura));
+        else if (nodo->derecha() == NULL)
+            return (nodo->izquierda()->altura + 1);
+        else
+            return (nodo->izquierda()->altura - nodo->derecha()->altura);
+    }
+
+    NodoArbol<KVPar<int, E> *> * rotarDerecha(NodoArbol<KVPar<int, E> *> *nodo)
+    {
+        NodoArbol<KVPar<int, E> *> *temp = nodo->izquierda();
+        NodoArbol<KVPar<int, E> *> *aux = temp->derecha();
+
+        temp->setDerecha(nodo);
+        nodo->setIzquierda(aux);
+
+        if (aux != NULL)
+            aux->setPadre(nodo);
+        nodo->setPadre(temp);
+
+        this->actualizarAlturaNodo(nodo);
+        this->actualizarAlturaNodo(temp);
+
+        return temp;
+    }
+
+    NodoArbol<KVPar<int, E> *> * rotarIzquierda(NodoArbol<KVPar<int, E> *> *nodo)
+    {
+        NodoArbol<KVPar<int, E> *> *temp =  nodo->derecha();
+        NodoArbol<KVPar<int, E> *> *aux = temp->izquierda();
+
+        temp->setIzquierda(nodo);
+        nodo->setDerecha(aux);
+        if (aux != NULL)
+            aux->setPadre(nodo);
+        nodo->setPadre(temp);
+
+        this->actualizarAlturaNodo(nodo);
+        this->actualizarAlturaNodo(temp);
+
+        return temp;
+    }
+
+    void balancearArbol(NodoArbol<KVPar<int, E> *> *nodo) {
+        NodoArbol<KVPar<int, E> *> *temp, *aux1, *aux2, *aux3, *aux4;
+        int diferenciaAltura;
+
+        temp = nodo->padre();
+
+        aux1 = nodo->padre();
+        aux2 = nodo;
+        aux3 = NULL;
+
+        while (aux1 != NULL)
+        {
+            diferenciaAltura = this->calcularDiferenciaAltura(aux1);
+            // si existe diferencia de alturas realizar las rotaciones
+            if ((diferenciaAltura > 1) || (diferenciaAltura < (-1)))
+            {
+                aux4 = aux1->padre();
+                if (aux1->izquierda() == aux2 && aux2->izquierda() == aux3)
+                    temp = this->rotarDerecha(aux1);
+                else if (aux1->izquierda() == aux2 && aux2->derecha() == aux3)
+                {
+                    temp = this->rotarIzquierda(aux2);
+                    temp->setPadre(aux1);
+                    aux1->setIzquierda(temp);
+
+                    temp = rotarDerecha(aux1);
+                } else if (aux1->derecha() == aux2 && aux2->derecha() == aux3)
+                    temp = this->rotarIzquierda(aux1);
+                else {
+                    temp = rotarDerecha(aux2);
+                    temp->setPadre(aux1);
+                    aux1->setDerecha(temp);
+
+                    temp = this->rotarIzquierda(aux1);
+                }
+                if (aux4 != NULL) {
+                    temp->setPadre(aux4);
+                    if(aux4->derecha() == aux1)
+                        aux4->setDerecha(temp);
+                    else
+                        aux4->setIzquierda(temp);
+                } else {
+                    this->raiz = temp;
+                    temp->setPadre(NULL);
+                }
+                temp = this->actualizarAlturaArbol(temp);
+            }
+            aux3 = aux2;
+            aux2 = aux1;
+            aux1 = aux1->padre();
+        }
+    }
+
+    void agregar(E e)
+    {
+        int key = this->tam;
+        NodoArbol<KVPar<int, E> *> *nodo = new NodoArbol<KVPar<int, E> *>(new KVPar<int, E>(key, e));
+
+        NodoArbol<KVPar<int, E> *> *temp = this->raiz;
+        this->tam++;
+
+        while (true)
+        {
+            if (temp == NULL)
+            {
+                this->raiz = nodo;
+                return;
+            }
+            // Si el nodo entrante es mayor entonces lo ubicamos a la derecha
+            if (key > temp->valor()->key())
+            {
+                if (temp->derecha() == NULL)
+                {
+                    nodo->setPadre(temp);
+                    temp->setDerecha(nodo);
+                    break;
+                }
+                else
+                {
+                    temp = temp->derecha();
+                }
+                // Si el nodo entrante es menor entonces lo ubicamos a la izquierda
+            }
+            else if (key < temp->valor()->key())
+            {
+                if (temp->izquierda() == NULL)
+                {
+                    nodo->setPadre(temp);
+                    temp->setIzquierda(nodo);
+                    break;
+                }
+                else
+                {
+                    temp = temp->izquierda();
+                }
+            }
+            else
+            {
+                // Si el nodo entrante tiene el mismo valor
+                // no hacemos nada
+                this->tam--;
+                return;
+            }
+        }
+
+        // actualizar la altura del arbol
+        this->actualizarAlturaArbol(nodo);
+
+        // balancear el arbol
+        this->balancearArbol(nodo);
+    }
+
+    int numNodos() {
+        return this->tam;
     }
 };
 
@@ -811,6 +1010,7 @@ private:
     ListaEnlazada<string> *freqwords;
     ListaEnlazada<KVPar<string, int *> *> *bagOfWords;
     DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *> *hashtable;
+    ArbolBalanceado<KVPar<string, string> *> *arbolBalanceado;
     int pMinkouski = 1;
 
     void agregarWord(string word)
@@ -1080,6 +1280,21 @@ public:
 
     void almacenarEnArbolBalanceado()
     {
+        cout << "\nAlmacenando en arbol balanceado AVL..." << endl;
+        string corpusText;
+        this->arbolBalanceado = new ArbolBalanceado<KVPar<string, string> *>();
+        for (
+            this->listaCorpus->moverAInicio();
+            this->listaCorpus->posicionActual() < this->listaCorpus->longitud();
+            this->listaCorpus->siguiente())
+        {
+            corpusText = this->listaCorpus->getValor();
+            string vector = this->vectorizar(corpusText);
+            KVPar<string, string> *KVVectorCorpus = new KVPar<string, string>(vector, corpusText);
+
+            this->arbolBalanceado->agregar(KVVectorCorpus);
+        }
+        cout << "Cantidad de nodos: " << this->arbolBalanceado->numNodos() << endl;
     }
 
     void rangeQuery(string query, int sensibilidad)
@@ -1116,8 +1331,8 @@ int main()
 
     test->filtrarTokensMasFrecuentes();
 
-    test->almacenarEnTablasHash();
-    // text->almacenarEnArbolBalanceado();
+    // test->almacenarEnTablasHash();
+    test->almacenarEnArbolBalanceado();
 
     string query;
     int distancia;
