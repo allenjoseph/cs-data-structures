@@ -813,6 +813,12 @@ public:
         delete raiz;
     }
 
+    void limpiar()
+    {
+        this->raiz = NULL;
+        this->tam = 0;
+    }
+
     void actualizarAlturaNodo(NodoArbol<KVPar<int, E> *> *nodo)
     {
         if (nodo->izquierda() != NULL && nodo->derecha() != NULL)
@@ -1022,7 +1028,7 @@ public:
     }
 };
 
-class pln
+class PLN
 {
 private:
     ListaEnlazada<string> *listaCorpus;
@@ -1219,7 +1225,7 @@ private:
     }
 
 public:
-    pln()
+    PLN()
     {
         this->listaCorpus = new ListaEnlazada<string>();
         this->stopwords = new ListaEnlazada<string>();
@@ -1227,19 +1233,22 @@ public:
         this->freqwords = new ListaEnlazada<string>();
     }
 
-    ~pln()
+    ~PLN()
     {
         delete this->listaCorpus;
         delete this->stopwords;
         delete this->freqwords;
         delete this->bagOfWords;
         delete this->hashtable;
+        delete this->arbolBalanceado;
     }
 
     void limpiar()
     {
         this->bagOfWords->limpiar();
+        this->freqwords->limpiar();
         this->hashtable->limpiar();
+        this->arbolBalanceado->limpiar();
     }
 
     void cargarCorpus()
@@ -1355,7 +1364,7 @@ public:
 
 int main()
 {
-    pln *programa = new pln();
+    PLN *programa = new PLN();
 
     programa->cargarCorpus();
 

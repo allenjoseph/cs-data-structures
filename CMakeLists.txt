@@ -3,5 +3,5 @@ project(cs_data_structures)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(nlp src/npl/nlp.cpp)
+add_executable(pln src/pln/pln.cpp)
 
