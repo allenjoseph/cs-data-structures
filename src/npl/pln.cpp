@@ -1000,9 +1000,29 @@ public:
     int numNodos() {
         return this->tam;
     }
+
+    void buscarNodos(E e, ListaEnlazada<string> lista) {
+        if (this->raiz == NULL)
+            return;
+
+        NodoArbol<KVPar<int, E> *> *nodo = this->raiz;
+        // while (true)
+        // {
+            // if (nodo == NULL)
+            //     break;
+            // if (nodo->valor()->key() == e->key()) {
+            //     lista->agregar(e->valor());
+            // }
+            //     return nodo;
+            // else if (nodo->valor()->key() < e->key())
+            //     nodo = nodo->rightChild;
+            // else if (nodo->valor()->key() > e->key())
+            //     nodo = nodo->leftChild;
+        // }
+    }
 };
 
-class nlp
+class pln
 {
 private:
     ListaEnlazada<string> *listaCorpus;
@@ -1012,6 +1032,8 @@ private:
     DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *> *hashtable;
     ArbolBalanceado<KVPar<string, string> *> *arbolBalanceado;
     int pMinkouski = 1;
+    bool usarHashTable = false;
+    bool usarArbolBalanceado = false;
 
     void agregarWord(string word)
     {
@@ -1027,7 +1049,7 @@ private:
                      {
                          cleanWord += ch;
                      }
-                     else if ((int)ch == -95 || (int)ch == -127)
+                     else if ((int)ch == -95 || (int)ch == -127) //á y Á
                      {
                          cleanWord += 'a';
                      }
@@ -1047,7 +1069,7 @@ private:
                      {
                          cleanWord += 'u';
                      }
-                     else if ((int)ch == -79 || (int)ch == -111)
+                     else if ((int)ch == -79 || (int)ch == -111) //ñ y Ñ
                      {
                          cleanWord += 'n';
                      }
@@ -1197,7 +1219,7 @@ private:
     }
 
 public:
-    nlp()
+    pln()
     {
         this->listaCorpus = new ListaEnlazada<string>();
         this->stopwords = new ListaEnlazada<string>();
@@ -1205,7 +1227,7 @@ public:
         this->freqwords = new ListaEnlazada<string>();
     }
 
-    ~nlp()
+    ~pln()
     {
         delete this->listaCorpus;
         delete this->stopwords;
@@ -1259,16 +1281,17 @@ public:
 
     void almacenarEnTablasHash()
     {
+        this->usarHashTable = true;
         cout << "\nAlmacenando en tablas hash..." << endl;
         string corpusText;
-        this->hashtable = new DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *>(this->freqwords->longitud());
+        this->hashtable = new DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *>(this->freqwords->longitud()); // ??
         for (
             this->listaCorpus->moverAInicio();
             this->listaCorpus->posicionActual() < this->listaCorpus->longitud();
             this->listaCorpus->siguiente())
         {
             corpusText = this->listaCorpus->getValor();
-            string vector = this->vectorizar(corpusText);
+            string vector = this->vectorizar(corpusText); //01000000011.... (135)
             KVPar<string, string> *KVVectorCorpus = new KVPar<string, string>(vector, corpusText);
 
             ListaEnlazada<KVPar<string, string> *> *vectorCorpus = new ListaEnlazada<KVPar<string, string> *>();
@@ -1280,6 +1303,7 @@ public:
 
     void almacenarEnArbolBalanceado()
     {
+        this->usarArbolBalanceado = true;
         cout << "\nAlmacenando en arbol balanceado AVL..." << endl;
         string corpusText;
         this->arbolBalanceado = new ArbolBalanceado<KVPar<string, string> *>();
@@ -1304,44 +1328,54 @@ public:
         string queryVectorizado = this->vectorizar(query);
         cout << "query vectorizado: " << queryVectorizado << endl;
 
-        ListaEnlazada<KVPar<string, string> *> *corpusList = this->hashtable->encontrar(queryVectorizado);
-        cout << corpusList->longitud() << " posibles resultados." << endl;
-        for (
-            corpusList->moverAInicio();
-            corpusList->posicionActual() < corpusList->longitud();
-            corpusList->siguiente())
-        {
-            KVPar<string, string> *vectorCorpus = corpusList->getValor();
-            int d = this->distanciaMinkouski(queryVectorizado, vectorCorpus->key());
-            if (d <= sensibilidad)
+        if (this->usarHashTable) {
+            ListaEnlazada<KVPar<string, string> *> *corpusList = this->hashtable->encontrar(queryVectorizado);
+            cout << corpusList->longitud() << " posibles resultados.\n" << endl;
+            for (
+                corpusList->moverAInicio();
+                corpusList->posicionActual() < corpusList->longitud();
+                corpusList->siguiente())
             {
-                textosConSimilitud->agregar(vectorCorpus->valor());
+                KVPar<string, string> *vectorCorpus = corpusList->getValor();
+                int d = this->distanciaMinkouski(queryVectorizado, vectorCorpus->key());
+                if (d <= sensibilidad)
+                {
+                    textosConSimilitud->agregar(vectorCorpus->valor());
+                }
             }
         }
+
+        if (this->usarArbolBalanceado) {
+
+        }
+
         textosConSimilitud->imprimir();
     }
 };
 
 int main()
 {
-    nlp *test = new nlp();
-    test->cargarCorpus();
+    pln *programa = new pln();
 
-    test->extraerTokens();
+    programa->cargarCorpus();
 
-    test->filtrarTokensMasFrecuentes();
+    programa->extraerTokens();
 
-    // test->almacenarEnTablasHash();
-    test->almacenarEnArbolBalanceado();
+    programa->filtrarTokensMasFrecuentes();
+
+    programa->almacenarEnTablasHash();
+    //programa->almacenarEnArbolBalanceado();
 
     string query;
-    int distancia;
     cout << "\nINGRESA UN TEXTO A BUSCAR: ";
     getline(cin, query);
+
+    int distancia;
     cout << "RADIO DE BUSQUEDA: ";
     cin >> distancia;
-    test->rangeQuery(query, distancia);
 
-    delete test;
+    programa->rangeQuery(query, distancia);
+
+    delete programa;
     return 0;
 }
