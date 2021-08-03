@@ -6,6 +6,10 @@
 #include <cmath>
 
 using namespace std;
+using timer = std::chrono::system_clock;
+timer::time_point clock_start;
+timer::time_point clock_stop;
+std::chrono::duration<float> elapsed_time;
 
 //Clase Padre: Lista
 template <typename E>
@@ -460,6 +464,7 @@ public:
         {
             cout << *temp->elemento << endl;
             temp = temp->siguiente;
+            cout << endl;
         }
     }
 };
@@ -1032,11 +1037,14 @@ class PLN
 {
 private:
     ListaEnlazada<string> *listaCorpus;
-    ListaEnlazada<string> *stopwords;
-    ListaEnlazada<string> *freqwords;
+    ListaEnlazada<string> *listaStopwords;
+    ListaEnlazada<string> *listaTokens;
+    ListaEnlazada<string> *textosConSimilitud;
+
     ListaEnlazada<KVPar<string, int *> *> *bagOfWords;
-    DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *> *hashtable;
+    DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *> *tablaHash;
     ArbolBalanceado<KVPar<string, string> *> *arbolBalanceado;
+
     int pMinkouski = 1;
     bool usarHashTable = false;
     bool usarArbolBalanceado = false;
@@ -1091,32 +1099,31 @@ private:
         }
 
         for (
-            this->stopwords->moverAInicio();
-            this->stopwords->posicionActual() < this->stopwords->longitud();
-            this->stopwords->siguiente())
+            this->listaStopwords->moverAInicio();
+            this->listaStopwords->posicionActual() < this->listaStopwords->longitud();
+            this->listaStopwords->siguiente())
         {
-            string stopword = this->stopwords->getValor();
+            string stopword = this->listaStopwords->getValor();
             if (stopword == cleanWord)
                 return;
         }
 
-        bool wordexists = false;
+        bool wordExists = false;
         for (
             this->bagOfWords->moverAInicio();
             this->bagOfWords->posicionActual() < this->bagOfWords->longitud();
             this->bagOfWords->siguiente())
         {
-            KVPar<string, int *> *wordfreq = this->bagOfWords->getValor();
-            if (wordfreq->key() == cleanWord)
+            KVPar<string, int *> *wordFrecuencia = this->bagOfWords->getValor();
+            if (wordFrecuencia->key() == cleanWord)
             {
-                int *frecuencia = wordfreq->valor();
-                (*frecuencia)++;
-                wordexists = true;
+                (* wordFrecuencia->valor())++;
+                wordExists = true;
                 break;
             }
         }
 
-        if (!wordexists)
+        if (!wordExists)
         {
             KVPar<string, int *> *newword = new KVPar<string, int *>(cleanWord, new int(1));
             this->bagOfWords->insertar(newword);
@@ -1171,11 +1178,11 @@ private:
         tokens->insertar(token);
 
         for (
-            this->freqwords->moverAInicio();
-            this->freqwords->posicionActual() < this->freqwords->longitud();
-            this->freqwords->siguiente())
+            this->listaTokens->moverAInicio();
+            this->listaTokens->posicionActual() < this->listaTokens->longitud();
+            this->listaTokens->siguiente())
         {
-            freqword = this->freqwords->getValor();
+            freqword = this->listaTokens->getValor();
             exists = false;
             for (
                 tokens->moverAInicio();
@@ -1228,34 +1235,35 @@ public:
     PLN()
     {
         this->listaCorpus = new ListaEnlazada<string>();
-        this->stopwords = new ListaEnlazada<string>();
+        this->listaStopwords = new ListaEnlazada<string>();
         this->bagOfWords = new ListaEnlazada<KVPar<string, int *> *>();
-        this->freqwords = new ListaEnlazada<string>();
+        this->listaTokens = new ListaEnlazada<string>();
+        this->textosConSimilitud = new ListaEnlazada<string>();
     }
 
     ~PLN()
     {
         delete this->listaCorpus;
-        delete this->stopwords;
-        delete this->freqwords;
+        delete this->listaStopwords;
+        delete this->listaTokens;
         delete this->bagOfWords;
-        delete this->hashtable;
+        delete this->tablaHash;
         delete this->arbolBalanceado;
     }
 
     void limpiar()
     {
         this->bagOfWords->limpiar();
-        this->freqwords->limpiar();
-        this->hashtable->limpiar();
+        this->listaTokens->limpiar();
+        this->tablaHash->limpiar();
         this->arbolBalanceado->limpiar();
     }
 
-    void cargarCorpus()
+    void cargarCorpusStopwords()
     {
         cout << "\nCargando archivo de corpus y de stopwords..." << endl;
         this->readFile("corpus.txt", this->listaCorpus);
-        this->readFile("stopwords-es.txt", this->stopwords);
+        this->readFile("stopwords-es.txt", this->listaStopwords);
     }
 
     void extraerTokens()
@@ -1273,7 +1281,7 @@ public:
         cout << "Tokens extraidos: " << this->bagOfWords->longitud() << endl;
     }
 
-    void filtrarTokensMasFrecuentes(int frecuencia = 10)
+    void filtrarTokensFrecuentes(int frecuencia = 10)
     {
         for (
             this->bagOfWords->moverAInicio();
@@ -1282,10 +1290,10 @@ public:
         {
             if (*this->bagOfWords->getValor()->valor() >= frecuencia)
             {
-                this->freqwords->insertar(this->bagOfWords->getValor()->key());
+                this->listaTokens->insertar(this->bagOfWords->getValor()->key());
             }
         }
-        cout << "Tokens con frecuencia >= " << frecuencia << ": " << this->freqwords->longitud() << endl;
+        cout << "Tokens con frecuencia >= " << frecuencia << ": " << this->listaTokens->longitud() << endl;
     }
 
     void almacenarEnTablasHash()
@@ -1293,21 +1301,21 @@ public:
         this->usarHashTable = true;
         cout << "\nAlmacenando en tablas hash..." << endl;
         string corpusText;
-        this->hashtable = new DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *>(this->freqwords->longitud()); // ??
+        this->tablaHash = new DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *>(300);
         for (
             this->listaCorpus->moverAInicio();
             this->listaCorpus->posicionActual() < this->listaCorpus->longitud();
             this->listaCorpus->siguiente())
         {
             corpusText = this->listaCorpus->getValor();
-            string vector = this->vectorizar(corpusText); //01000000011.... (135)
+            string vector = this->vectorizar(corpusText);
             KVPar<string, string> *KVVectorCorpus = new KVPar<string, string>(vector, corpusText);
 
             ListaEnlazada<KVPar<string, string> *> *vectorCorpus = new ListaEnlazada<KVPar<string, string> *>();
             vectorCorpus->insertar(KVVectorCorpus);
-            this->hashtable->insertar(vector, vectorCorpus);
+            this->tablaHash->insertar(vector, vectorCorpus);
         }
-        cout << "Espacios ocupados: " << this->hashtable->longitud() << endl;
+        cout << "Espacios ocupados: " << this->tablaHash->longitud() << endl;
     }
 
     void almacenarEnArbolBalanceado()
@@ -1332,14 +1340,14 @@ public:
 
     void rangeQuery(string query, int sensibilidad)
     {
-        ListaEnlazada<string> *textosConSimilitud = new ListaEnlazada<string>();
+        clock_start = timer::now();
+
+        this->textosConSimilitud->limpiar();
 
         string queryVectorizado = this->vectorizar(query);
-        cout << "query vectorizado: " << queryVectorizado << endl;
 
         if (this->usarHashTable) {
-            ListaEnlazada<KVPar<string, string> *> *corpusList = this->hashtable->encontrar(queryVectorizado);
-            cout << corpusList->longitud() << " posibles resultados.\n" << endl;
+            ListaEnlazada<KVPar<string, string> *> *corpusList = this->tablaHash->encontrar(queryVectorizado);
             for (
                 corpusList->moverAInicio();
                 corpusList->posicionActual() < corpusList->longitud();
@@ -1355,9 +1363,15 @@ public:
         }
 
         if (this->usarArbolBalanceado) {
-
+            // TODO
         }
 
+        clock_stop = timer::now();
+        elapsed_time = clock_stop - clock_start;
+
+        cout << textosConSimilitud->longitud() << " resultados en ";
+        cout << elapsed_time.count() << " segundos.\n" << endl;
+        
         textosConSimilitud->imprimir();
     }
 };
@@ -1366,24 +1380,29 @@ int main()
 {
     PLN *programa = new PLN();
 
-    programa->cargarCorpus();
+    programa->cargarCorpusStopwords();
 
     programa->extraerTokens();
 
-    programa->filtrarTokensMasFrecuentes();
+    programa->filtrarTokensFrecuentes();
 
     programa->almacenarEnTablasHash();
     //programa->almacenarEnArbolBalanceado();
 
     string query;
-    cout << "\nINGRESA UN TEXTO A BUSCAR: ";
-    getline(cin, query);
-
     int distancia;
-    cout << "RADIO DE BUSQUEDA: ";
-    cin >> distancia;
+    while(true)
+    {
+        cout << "\nINGRESA UN TEXTO A BUSCAR: ";
+        getline(cin, query);
 
-    programa->rangeQuery(query, distancia);
+        cout << "RADIO DE BUSQUEDA: ";
+        cin >> distancia;
+
+        programa->rangeQuery(query, distancia);
+
+        cin.ignore();
+    }
 
     delete programa;
     return 0;
