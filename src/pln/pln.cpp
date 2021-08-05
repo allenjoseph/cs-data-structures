@@ -608,7 +608,8 @@ template <typename Key, typename E>
 class DiccionarioTablasHash : public Diccionario<Key, E>
 {
 private:
-    ListaArreglo<KVPar<int, E> *> *lista;
+    using KVParTHValue = KVPar<int, E>;
+    ListaArreglo<KVParTHValue *> *lista;
     int tamanio;
     int cantidad;
 
@@ -634,7 +635,7 @@ private:
             this->lista->posicionActual() < this->lista->longitud();
             this->lista->siguiente())
         {
-            KVPar<int, E> *temp = this->lista->getValor();
+            KVParTHValue *temp = this->lista->getValor();
             if (temp != nullptr && hash == temp->key())
             {
                 return temp->valor();
@@ -648,7 +649,7 @@ public:
     DiccionarioTablasHash(int tamanio)
     {
         this->tamanio = tamanio;
-        this->lista = new ListaArreglo<KVPar<int, E> *>(tamanio);
+        this->lista = new ListaArreglo<KVParTHValue *>(tamanio);
         this->cantidad = 0;
     }
 
@@ -669,7 +670,7 @@ public:
 
         if (temp == NULL)
         {
-            this->lista->insertar(new KVPar<int, E>(hash, e));
+            this->lista->insertar(new KVParTHValue(hash, e));
         }
         else
         {
@@ -704,7 +705,7 @@ public:
         this->lista->moverAlFinal();
         this->lista->anterior();
 
-        KVPar<int, E> *temp = this->lista->getValor();
+        KVParTHValue *temp = this->lista->getValor();
         this->lista->eliminar();
         return temp->valor();
     };
@@ -803,8 +804,23 @@ template <typename E>
 class ArbolBalanceado
 {
 private:
-    NodoArbol<KVPar<int, E> *> *raiz;
+    using KVParAB = KVPar<int, ListaEnlazada<E> *>;
+    NodoArbol<KVParAB *> *raiz;
     int tam;
+
+    int hash(string k)
+    {
+        int sum = 0;
+        int idx = 0;
+        for_each(k.begin(), k.end(), [&](char ch)
+                 {
+                     int ascii = ch;
+                     //  sum += ascii;
+                     sum += ascii * (10 ^ idx);
+                     idx++;
+                 });
+        return sum % 300;
+    }
 
 public:
     ArbolBalanceado()
@@ -824,7 +840,7 @@ public:
         this->tam = 0;
     }
 
-    void actualizarAlturaNodo(NodoArbol<KVPar<int, E> *> *nodo)
+    void actualizarAlturaNodo(NodoArbol<KVParAB *> *nodo)
     {
         if (nodo->izquierda() != NULL && nodo->derecha() != NULL)
             nodo->altura = 1 + max(nodo->izquierda()->altura, nodo->derecha()->altura);
@@ -836,9 +852,9 @@ public:
             nodo->altura = 0;
     }
 
-    NodoArbol<KVPar<int, E> *>* actualizarAlturaArbol(NodoArbol<KVPar<int, E> *> *nodo)
+    NodoArbol<KVParAB *> *actualizarAlturaArbol(NodoArbol<KVParAB *> *nodo)
     {
-        NodoArbol<KVPar<int, E> *> *temp = nodo->padre();
+        NodoArbol<KVParAB *> *temp = nodo->padre();
         while (temp != NULL)
         {
             this->actualizarAlturaNodo(temp);
@@ -847,7 +863,7 @@ public:
         return temp;
     }
 
-    int calcularDiferenciaAltura(NodoArbol<KVPar<int, E> *> *nodo)
+    int calcularDiferenciaAltura(NodoArbol<KVParAB *> *nodo)
     {
         if (nodo == NULL)
             return 0;
@@ -861,10 +877,10 @@ public:
             return (nodo->izquierda()->altura - nodo->derecha()->altura);
     }
 
-    NodoArbol<KVPar<int, E> *> * rotarDerecha(NodoArbol<KVPar<int, E> *> *nodo)
+    NodoArbol<KVParAB *> *rotarDerecha(NodoArbol<KVParAB *> *nodo)
     {
-        NodoArbol<KVPar<int, E> *> *temp = nodo->izquierda();
-        NodoArbol<KVPar<int, E> *> *aux = temp->derecha();
+        NodoArbol<KVParAB *> *temp = nodo->izquierda();
+        NodoArbol<KVParAB *> *aux = temp->derecha();
 
         temp->setDerecha(nodo);
         nodo->setIzquierda(aux);
@@ -879,10 +895,10 @@ public:
         return temp;
     }
 
-    NodoArbol<KVPar<int, E> *> * rotarIzquierda(NodoArbol<KVPar<int, E> *> *nodo)
+    NodoArbol<KVParAB *> *rotarIzquierda(NodoArbol<KVParAB *> *nodo)
     {
-        NodoArbol<KVPar<int, E> *> *temp =  nodo->derecha();
-        NodoArbol<KVPar<int, E> *> *aux = temp->izquierda();
+        NodoArbol<KVParAB *> *temp = nodo->derecha();
+        NodoArbol<KVParAB *> *aux = temp->izquierda();
 
         temp->setIzquierda(nodo);
         nodo->setDerecha(aux);
@@ -896,8 +912,9 @@ public:
         return temp;
     }
 
-    void balancearArbol(NodoArbol<KVPar<int, E> *> *nodo) {
-        NodoArbol<KVPar<int, E> *> *temp, *aux1, *aux2, *aux3, *aux4;
+    void balancearArbol(NodoArbol<KVParAB *> *nodo)
+    {
+        NodoArbol<KVParAB *> *temp, *aux1, *aux2, *aux3, *aux4;
         int diferenciaAltura;
 
         temp = nodo->padre();
@@ -909,6 +926,7 @@ public:
         while (aux1 != NULL)
         {
             diferenciaAltura = this->calcularDiferenciaAltura(aux1);
+
             // si existe diferencia de alturas realizar las rotaciones
             if ((diferenciaAltura > 1) || (diferenciaAltura < (-1)))
             {
@@ -922,22 +940,27 @@ public:
                     aux1->setIzquierda(temp);
 
                     temp = rotarDerecha(aux1);
-                } else if (aux1->derecha() == aux2 && aux2->derecha() == aux3)
+                }
+                else if (aux1->derecha() == aux2 && aux2->derecha() == aux3)
                     temp = this->rotarIzquierda(aux1);
-                else {
+                else
+                {
                     temp = rotarDerecha(aux2);
                     temp->setPadre(aux1);
                     aux1->setDerecha(temp);
 
                     temp = this->rotarIzquierda(aux1);
                 }
-                if (aux4 != NULL) {
+                if (aux4 != NULL)
+                {
                     temp->setPadre(aux4);
-                    if(aux4->derecha() == aux1)
+                    if (aux4->derecha() == aux1)
                         aux4->setDerecha(temp);
                     else
                         aux4->setIzquierda(temp);
-                } else {
+                }
+                else
+                {
                     this->raiz = temp;
                     temp->setPadre(NULL);
                 }
@@ -951,10 +974,12 @@ public:
 
     void agregar(E e)
     {
-        int key = this->tam;
-        NodoArbol<KVPar<int, E> *> *nodo = new NodoArbol<KVPar<int, E> *>(new KVPar<int, E>(key, e));
-
-        NodoArbol<KVPar<int, E> *> *temp = this->raiz;
+        int key = this->hash(e->key());
+        ListaEnlazada<E> *listaE = new ListaEnlazada<E>();
+        listaE->agregar(e);
+        KVParAB *nodoValue = new KVParAB(key, listaE);
+        NodoArbol<KVParAB *> *nodo = new NodoArbol<KVParAB *>(nodoValue);
+        NodoArbol<KVParAB *> *temp = this->raiz;
         this->tam++;
 
         while (true)
@@ -964,8 +989,7 @@ public:
                 this->raiz = nodo;
                 return;
             }
-            // Si el nodo entrante es mayor entonces lo ubicamos a la derecha
-            if (key > temp->valor()->key())
+            if (key > temp->valor()->key()) // Si el nodo entrante es >= entonces lo ubicamos a la derecha
             {
                 if (temp->derecha() == NULL)
                 {
@@ -974,12 +998,9 @@ public:
                     break;
                 }
                 else
-                {
                     temp = temp->derecha();
-                }
-                // Si el nodo entrante es menor entonces lo ubicamos a la izquierda
             }
-            else if (key < temp->valor()->key())
+            else if (key < temp->valor()->key()) // Si el nodo entrante es menor entonces lo ubicamos a la izquierda
             {
                 if (temp->izquierda() == NULL)
                 {
@@ -988,16 +1009,12 @@ public:
                     break;
                 }
                 else
-                {
                     temp = temp->izquierda();
-                }
-            }
-            else
+            } else // Si el nodo entrante ya existe entonces se agregar a la lista
             {
-                // Si el nodo entrante tiene el mismo valor
-                // no hacemos nada
+                temp->valor()->valor()->agregar(e);
                 this->tam--;
-                return;
+                break;
             }
         }
 
@@ -1008,28 +1025,51 @@ public:
         this->balancearArbol(nodo);
     }
 
-    int numNodos() {
+    int numNodos()
+    {
         return this->tam;
     }
 
-    void buscarNodos(E e, ListaEnlazada<string> lista) {
-        if (this->raiz == NULL)
-            return;
+    int altura() {
+        NodoArbol<KVParAB *> * cabeza = this->raiz;
+        if (cabeza == NULL)
+            return 0;
+        return cabeza->altura;
+    }
 
-        NodoArbol<KVPar<int, E> *> *nodo = this->raiz;
-        // while (true)
-        // {
-            // if (nodo == NULL)
-            //     break;
-            // if (nodo->valor()->key() == e->key()) {
-            //     lista->agregar(e->valor());
+    ListaEnlazada<E> * buscarNodos(string queryVector)
+    {
+        ListaEnlazada<E> *resultados = new ListaEnlazada<E>();
+        if (this->raiz == NULL)
+            return resultados;
+
+        int key = this->hash(queryVector);
+        // cout << "key a buscar: " << key << endl;
+
+        NodoArbol<KVParAB *> *nodo = this->raiz;
+        while (true)
+        {
+            if (nodo == NULL)
+                break;
+
+            // cout << "nodo: [" << nodo->valor()->key() << "] ";
+            // if (nodo->izquierda() != NULL) {
+            //     cout << "nodo izq: [" << nodo->izquierda()->valor()->key() << "] ";
             // }
-            //     return nodo;
-            // else if (nodo->valor()->key() < e->key())
-            //     nodo = nodo->rightChild;
-            // else if (nodo->valor()->key() > e->key())
-            //     nodo = nodo->leftChild;
-        // }
+            // if (nodo->derecha() != NULL) {
+            //     cout << "nodo der: [" << nodo->derecha()->valor()->key() << "]" << endl;
+            // }
+
+            if (nodo->valor()->key() == key) {
+                resultados = nodo->valor()->valor();
+                break;
+            }
+            else if (nodo->valor()->key() < key)
+                nodo = nodo->derecha();
+            else
+                nodo = nodo->izquierda();
+        }
+        return resultados;
     }
 };
 
@@ -1052,51 +1092,31 @@ private:
     void agregarWord(string word)
     {
         if (word[0] == '@')
-        {
             return;
-        }
 
         string cleanWord;
         for_each(word.begin(), word.end(), [&](char ch)
                  {
                      if (ch == ' ')
-                     {
                          cleanWord += ch;
-                     }
-                     else if ((int)ch == -95 || (int)ch == -127) //á y Á
-                     {
+                     else if ((int)ch == -95 || (int)ch == -127) // á y Á
                          cleanWord += 'a';
-                     }
-                     else if ((int)ch == -87 || (int)ch == -119)
-                     {
+                     else if ((int)ch == -87 || (int)ch == -119) // é y É
                          cleanWord += 'e';
-                     }
-                     else if ((int)ch == -83 || (int)ch == -115)
-                     {
+                     else if ((int)ch == -83 || (int)ch == -115) // í y Í
                          cleanWord += 'i';
-                     }
-                     else if ((int)ch == -77 || (int)ch == -109)
-                     {
+                     else if ((int)ch == -77 || (int)ch == -109) // ó y Ó
                          cleanWord += 'o';
-                     }
-                     else if ((int)ch == -70 || (int)ch == -102)
-                     {
+                     else if ((int)ch == -70 || (int)ch == -102) // ú y Ú
                          cleanWord += 'u';
-                     }
-                     else if ((int)ch == -79 || (int)ch == -111) //ñ y Ñ
-                     {
+                     else if ((int)ch == -79 || (int)ch == -111) // ñ y Ñ
                          cleanWord += 'n';
-                     }
                      else if (isalnum(ch))
-                     {
                          cleanWord += tolower(ch);
-                     }
                  });
 
         if (cleanWord.empty())
-        {
             return;
-        }
 
         for (
             this->listaStopwords->moverAInicio();
@@ -1117,7 +1137,7 @@ private:
             KVPar<string, int *> *wordFrecuencia = this->bagOfWords->getValor();
             if (wordFrecuencia->key() == cleanWord)
             {
-                (* wordFrecuencia->valor())++;
+                (*wordFrecuencia->valor())++;
                 wordExists = true;
                 break;
             }
@@ -1299,6 +1319,7 @@ public:
     void almacenarEnTablasHash()
     {
         this->usarHashTable = true;
+        this->usarArbolBalanceado = false;
         cout << "\nAlmacenando en tablas hash..." << endl;
         string corpusText;
         this->tablaHash = new DiccionarioTablasHash<string, ListaEnlazada<KVPar<string, string> *> *>(300);
@@ -1320,6 +1341,7 @@ public:
 
     void almacenarEnArbolBalanceado()
     {
+        this->usarHashTable = false;
         this->usarArbolBalanceado = true;
         cout << "\nAlmacenando en arbol balanceado AVL..." << endl;
         string corpusText;
@@ -1336,6 +1358,7 @@ public:
             this->arbolBalanceado->agregar(KVVectorCorpus);
         }
         cout << "Cantidad de nodos: " << this->arbolBalanceado->numNodos() << endl;
+        cout << "Altura del arbol: " << this->arbolBalanceado->altura() << endl;
     }
 
     void rangeQuery(string query, int sensibilidad)
@@ -1346,32 +1369,49 @@ public:
 
         string queryVectorizado = this->vectorizar(query);
 
-        if (this->usarHashTable) {
-            ListaEnlazada<KVPar<string, string> *> *corpusList = this->tablaHash->encontrar(queryVectorizado);
+        KVPar<string, string> *vectorCorpus;
+        ListaEnlazada<KVPar<string, string> *> *listaResultados;
+        int distancia;
+
+        if (this->usarHashTable)
+        {
+            listaResultados = this->tablaHash->encontrar(queryVectorizado);
             for (
-                corpusList->moverAInicio();
-                corpusList->posicionActual() < corpusList->longitud();
-                corpusList->siguiente())
+                listaResultados->moverAInicio();
+                listaResultados->posicionActual() < listaResultados->longitud();
+                listaResultados->siguiente())
             {
-                KVPar<string, string> *vectorCorpus = corpusList->getValor();
-                int d = this->distanciaMinkouski(queryVectorizado, vectorCorpus->key());
-                if (d <= sensibilidad)
+                vectorCorpus = listaResultados->getValor();
+                distancia = this->distanciaMinkouski(queryVectorizado, vectorCorpus->key());
+                if (distancia <= sensibilidad)
+                {
+                    textosConSimilitud->agregar(vectorCorpus->valor());
+                }
+            }
+        } else if (this->usarArbolBalanceado)
+        {
+            listaResultados = this->arbolBalanceado->buscarNodos(queryVectorizado);
+            for (
+                listaResultados->moverAInicio();
+                listaResultados->posicionActual() < listaResultados->longitud();
+                listaResultados->siguiente())
+            {
+                vectorCorpus = listaResultados->getValor();
+                distancia = this->distanciaMinkouski(queryVectorizado, vectorCorpus->key());
+                if (distancia <= sensibilidad)
                 {
                     textosConSimilitud->agregar(vectorCorpus->valor());
                 }
             }
         }
 
-        if (this->usarArbolBalanceado) {
-            // TODO
-        }
-
         clock_stop = timer::now();
         elapsed_time = clock_stop - clock_start;
 
         cout << textosConSimilitud->longitud() << " resultados en ";
-        cout << elapsed_time.count() << " segundos.\n" << endl;
-        
+        cout << elapsed_time.count() << " segundos.\n"
+             << endl;
+
         textosConSimilitud->imprimir();
     }
 };
@@ -1387,11 +1427,11 @@ int main()
     programa->filtrarTokensFrecuentes();
 
     programa->almacenarEnTablasHash();
-    //programa->almacenarEnArbolBalanceado();
+    // programa->almacenarEnArbolBalanceado();
 
     string query;
     int distancia;
-    while(true)
+    while (true)
     {
         cout << "\nINGRESA UN TEXTO A BUSCAR: ";
         getline(cin, query);
