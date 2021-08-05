@@ -608,8 +608,8 @@ template <typename Key, typename E>
 class DiccionarioTablasHash : public Diccionario<Key, E>
 {
 private:
-    using KVParTHValue = KVPar<int, E>;
-    ListaArreglo<KVParTHValue *> *lista;
+    using KVParTH = KVPar<int, E>;
+    ListaArreglo<KVParTH *> *lista;
     int tamanio;
     int cantidad;
 
@@ -635,7 +635,7 @@ private:
             this->lista->posicionActual() < this->lista->longitud();
             this->lista->siguiente())
         {
-            KVParTHValue *temp = this->lista->getValor();
+            KVParTH *temp = this->lista->getValor();
             if (temp != nullptr && hash == temp->key())
             {
                 return temp->valor();
@@ -649,7 +649,7 @@ public:
     DiccionarioTablasHash(int tamanio)
     {
         this->tamanio = tamanio;
-        this->lista = new ListaArreglo<KVParTHValue *>(tamanio);
+        this->lista = new ListaArreglo<KVParTH *>(tamanio);
         this->cantidad = 0;
     }
 
@@ -669,13 +669,9 @@ public:
         E temp = this->encontrarInterno(k);
 
         if (temp == NULL)
-        {
-            this->lista->insertar(new KVParTHValue(hash, e));
-        }
+            this->lista->insertar(new KVParTH(hash, e));
         else
-        {
             temp->insertar(e->getValor());
-        }
     };
 
     E remover(Key k)
@@ -705,7 +701,7 @@ public:
         this->lista->moverAlFinal();
         this->lista->anterior();
 
-        KVParTHValue *temp = this->lista->getValor();
+        KVParTH *temp = this->lista->getValor();
         this->lista->eliminar();
         return temp->valor();
     };
