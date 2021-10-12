@@ -3,5 +3,5 @@ project(cs_data_structures)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(pln src/pln/pln.cpp)
+add_executable(decision-tree src/decision-tree/decision-tree.cpp)
 
